@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🍀 심플로또 - 순수한 행운</title>
+    <meta name="description" content="광고 없는 순수 로또 명당. 역대 당첨번호 100% 제외 알고리즘과 사주 기반 행운 번호를 무료로 받아보세요.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.simplesajulotto.com">
+    <meta property="og:title" content="🍀 심플로또 - 광고 없는 순수한 행운">
+    <meta property="og:description" content="역대 당첨번호 완벽 제외 & 내 사주로 보는 오늘의 로또 번호. 지금 확인하세요.">
+    <meta property="og:image" content="https://www.simplesajulotto.com/og-image.jpg">
     <!-- 구글 폰트: Noto Serif KR (명조체) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -871,45 +877,75 @@ function switchTab(tabName) {
 // ============================================
 // 번호 생성 (가중치 + 역대 당첨번호 제외)
 // ============================================
+
 function generateNumbers() {
-    let numbers;
-    let attempts = 0;
-    const latestRound = PAST_WINNERS.length;
+    const ballContainer = document.getElementById('generatedNumbers');
+    const button = document.querySelector('.main-generate .btn');
     
-    do {
-        const pool = Array.from({length: 45}, (_, i) => i + 1);
-        numbers = [];
+    // 1. 버튼 비활성화 및 "추첨 중" 표시
+    button.disabled = true;
+    button.innerText = "번호 추첨 중... 🎲";
+    button.style.opacity = "0.7";
+    
+    let interval;
+    let counter = 0;
+    
+    // 2. 0.05초마다 랜덤 번호 보여주기 (시각적 효과)
+    interval = setInterval(() => {
+        // 임시로 보여줄 가짜 번호들
+        const tempBalls = Array.from({length: 6}, () => Math.floor(Math.random() * 45) + 1);
+        ballContainer.innerHTML = tempBalls.map(n => createBall(n)).join('');
+        counter++;
         
-        for (let i = 0; i < 6; i++) {
-            // 가중치: 최근 안 나온 번호 약간 선호
-            const weights = pool.map(n => {
-                const notAppeared = latestRound - numberStats[n].lastAppear;
-                return 1 + (notAppeared * 0.03);
-            });
-            const totalWeight = weights.reduce((a, b) => a + b, 0);
-            let r = Math.random() * totalWeight;
-            let idx = 0;
-            for (let j = 0; j < weights.length; j++) {
-                r -= weights[j];
-                if (r <= 0) { idx = j; break; }
-            }
-            numbers.push(pool.splice(idx, 1)[0]);
+        // 3. 0.6초(12번 반복) 후 실제 로직 실행
+        if(counter > 12) {
+            clearInterval(interval);
+            
+            // --- 여기서부터 실제 번호 계산 로직 ---
+            let numbers;
+            let attempts = 0;
+            const latestRound = PAST_WINNERS.length;
+            
+            do {
+                const pool = Array.from({length: 45}, (_, i) => i + 1);
+                numbers = [];
+                for (let i = 0; i < 6; i++) {
+                    const weights = pool.map(n => {
+                        const notAppeared = latestRound - numberStats[n].lastAppear;
+                        return 1 + (notAppeared * 0.03);
+                    });
+                    const totalWeight = weights.reduce((a, b) => a + b, 0);
+                    let r = Math.random() * totalWeight;
+                    let idx = 0;
+                    for (let j = 0; j < weights.length; j++) {
+                        r -= weights[j];
+                        if (r <= 0) { idx = j; break; }
+                    }
+                    numbers.push(pool.splice(idx, 1)[0]);
+                }
+                numbers.sort((a, b) => a - b);
+                attempts++;
+            } while (pastSet.has(numbers.join(',')) && attempts < 1000);
+            
+            // 결과 확정 및 화면 표시
+            currentNumbers = numbers;
+            ballContainer.innerHTML = numbers.map(n => createBall(n)).join('');
+            
+            // 히스토리에 저장
+            history.unshift(numbers);
+            if (history.length > 5) history.pop();
+            
+            document.getElementById('historyCard').style.display = 'block';
+            document.getElementById('historyList').innerHTML = history.map(nums => 
+                `<div class="history-item">${nums.map(n => createBall(n, 'sm')).join('')}</div>`
+            ).join('');
+            
+            // 버튼 다시 활성화
+            button.disabled = false;
+            button.innerText = "행운의 번호 생성";
+            button.style.opacity = "1";
         }
-        numbers.sort((a, b) => a - b);
-        attempts++;
-    } while (pastSet.has(numbers.join(',')) && attempts < 1000);
-    
-    currentNumbers = numbers;
-    document.getElementById('generatedNumbers').innerHTML = numbers.map(n => createBall(n)).join('');
-    
-    // 히스토리에 추가
-    history.unshift(numbers);
-    if (history.length > 5) history.pop();
-    
-    document.getElementById('historyCard').style.display = 'block';
-    document.getElementById('historyList').innerHTML = history.map(nums => 
-        `<div class="history-item">${nums.map(n => createBall(n, 'sm')).join('')}</div>`
-    ).join('');
+    }, 50); // 0.05초 속도
 }
 
 // ============================================
