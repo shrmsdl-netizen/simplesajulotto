@@ -522,12 +522,7 @@
             <div id="historyList"></div>
         </div>
         
-        <div class="card latest-winner">
-            <h4>🏆 최신 당첨번호</h4>
-            <p class="sub">역대 모든 당첨번호 DB 보유 · 중복 100% 제외</p>
-            <div class="balls-container" id="latestNumbers"></div>
-        </div>
-        
+
         <div class="philosophy-section">
             <div class="quote">
                 행운은 순수한 흐름 속에 깃듭니다.<br><br>
@@ -731,8 +726,6 @@ const PAST_WINNERS = [
     [3,7,14,26,27,43],[3,11,12,18,29,45],[1,16,23,34,36,44],[1,9,14,21,23,43],[12,14,18,26,36,45]
 ];
 
-const LATEST_NUMBERS = [1, 4, 16, 23, 31, 41];
-const BONUS_NUMBER = 2;
 const MY_ACCOUNT = "케이뱅크 100150462483 김대인";
 
 // ============================================
@@ -741,12 +734,6 @@ const MY_ACCOUNT = "케이뱅크 100150462483 김대인";
 const pastSet = new Set(PAST_WINNERS.map(arr => [...arr].sort((a,b)=>a-b).join(',')));
 let currentNumbers = [];
 const history = [];
-
-// 최신 당첨번호 표시
-document.getElementById('latestNumbers').innerHTML = 
-    LATEST_NUMBERS.map(n => createBall(n, 'sm')).join('') +
-    '<span style="margin:0 8px;color:#666;">+</span>' +
-    createBall(BONUS_NUMBER, 'sm');
 
 // 통계 계산
 const numberStats = {};
