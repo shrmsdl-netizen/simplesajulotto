@@ -469,6 +469,21 @@
             border-radius: 20px;
             border: 4px solid #C62828;
         }
+        
+        /* 사주 기둥 */
+        .saju-pillar {
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            padding: 12px 8px;
+            border: 1px solid rgba(253,216,53,0.2);
+        }
+        
+        /* 오행 색상 */
+        .element-wood { color: #4CAF50; }
+        .element-fire { color: #F44336; }
+        .element-earth { color: #FF9800; }
+        .element-metal { color: #9E9E9E; }
+        .element-water { color: #2196F3; }
     </style>
 </head>
 <body>
@@ -538,10 +553,10 @@
     <!-- 탭 2: 사주 운세 -->
     <div id="tab-fortune" class="tab-content">
         <div class="card">
-            <h3>🎂 생년월일로 행운 번호 받기</h3>
+            <h3>🎂 생년월일로 사주 분석</h3>
             <p style="font-size:13px;color:#888;margin-bottom:10px;">
-                사주 기반으로 오늘의 행운 번호를 생성합니다.<br>
-                같은 생년월일이면 항상 같은 번호가 나옵니다.
+                사주팔자(四柱八字) 기반으로 오행을 분석하고<br>
+                오늘의 행운 번호를 생성합니다.
             </p>
             
             <div class="birth-input-group">
@@ -553,15 +568,58 @@
                 <label>일</label>
             </div>
             
-            <button class="btn" onclick="getFortune()">🔮 오늘의 행운 번호 받기</button>
+            <button class="btn" onclick="getFortune()">🔮 사주 분석 & 행운 번호</button>
         </div>
         
+        <!-- 사주 분석 결과 -->
+        <div class="card" id="sajuResult" style="display:none;">
+            <h3>📜 사주팔자 분석</h3>
+            
+            <!-- 사주 기둥 표시 -->
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:15px 0;text-align:center;">
+                <div class="saju-pillar">
+                    <div style="font-size:10px;color:#888;margin-bottom:5px;">시주(時柱)</div>
+                    <div style="font-size:20px;" id="hourPillar">-</div>
+                </div>
+                <div class="saju-pillar">
+                    <div style="font-size:10px;color:#888;margin-bottom:5px;">일주(日柱)</div>
+                    <div style="font-size:20px;" id="dayPillar">-</div>
+                </div>
+                <div class="saju-pillar">
+                    <div style="font-size:10px;color:#888;margin-bottom:5px;">월주(月柱)</div>
+                    <div style="font-size:20px;" id="monthPillar">-</div>
+                </div>
+                <div class="saju-pillar">
+                    <div style="font-size:10px;color:#888;margin-bottom:5px;">연주(年柱)</div>
+                    <div style="font-size:20px;" id="yearPillar">-</div>
+                </div>
+            </div>
+            
+            <!-- 오행 분석 -->
+            <div style="background:rgba(0,0,0,0.2);border-radius:12px;padding:15px;margin:15px 0;">
+                <div style="font-size:12px;color:#FDD835;margin-bottom:10px;">오행(五行) 분포</div>
+                <div id="fiveElements" style="display:flex;justify-content:space-around;text-align:center;"></div>
+            </div>
+            
+            <!-- 일간(본인) 오행 -->
+            <div style="text-align:center;padding:20px 0;">
+                <div style="font-size:12px;color:#888;margin-bottom:8px;">당신의 일간(日干)</div>
+                <div style="font-size:50px;margin-bottom:10px;" id="mainElementIcon">🔥</div>
+                <div style="font-size:24px;font-weight:700;color:#FDD835;" id="mainElementName">火</div>
+                <div style="font-size:14px;color:#aaa;margin-top:5px;" id="mainElementKor">불 기운</div>
+            </div>
+        </div>
+        
+        <!-- 운세 결과 -->
         <div class="card fortune-card" id="fortuneResult" style="display:none;">
             <div class="emoji" id="fortuneEmoji">🌟</div>
             <h2 id="fortuneTitle"></h2>
             <p id="fortuneText"></p>
-            <div class="balls-container" id="fortuneNumbers" style="margin-top:20px;"></div>
-            <p style="color:#FDD835;font-size:13px;margin-top:15px;" id="fortuneTip"></p>
+            <div style="margin:20px 0;padding:15px;background:rgba(0,0,0,0.2);border-radius:10px;">
+                <div style="font-size:11px;color:#888;margin-bottom:8px;">오행 상생(相生) 기반 행운 번호</div>
+                <div class="balls-container" id="fortuneNumbers"></div>
+            </div>
+            <p style="color:#FDD835;font-size:13px;" id="fortuneTip"></p>
         </div>
     </div>
     
@@ -896,23 +954,187 @@ function saveImage() {
 }
 
 // ============================================
-// 사주 운세
+// 사주팔자(四柱八字) 시스템
 // ============================================
-const fortunes = [
-    { emoji: '🌟', title: '대박의 기운!', text: '오늘은 재물운이 최고조입니다. 직감을 믿고 행동하세요.' },
-    { emoji: '✨', title: '상승하는 운세', text: '작은 투자가 큰 결실을 맺을 수 있는 날입니다.' },
-    { emoji: '🍀', title: '행운이 함께', text: '주변 사람들과 함께할 때 운이 더욱 커집니다.' },
-    { emoji: '💫', title: '안정적인 하루', text: '차분하게 기다리면 좋은 기회가 찾아옵니다.' },
-    { emoji: '🌙', title: '충전의 시간', text: '오늘은 에너지를 모으는 날입니다. 큰 결정은 미루세요.' }
-];
 
-const tips = [
-    '💡 동쪽 방향이 행운을 가져옵니다',
-    '💡 노란색 물건이 행운의 부적입니다',
-    '💡 오전 11시가 가장 좋은 시간입니다',
-    '💡 홀수 번호에 집중해보세요',
-    '💡 30번대 숫자가 행운을 품고 있습니다'
-];
+// 천간(天干) 10개
+const CHEONGAN = ['갑(甲)', '을(乙)', '병(丙)', '정(丁)', '무(戊)', '기(己)', '경(庚)', '신(辛)', '임(壬)', '계(癸)'];
+const CHEONGAN_HANJA = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+
+// 지지(地支) 12개
+const JIJI = ['자(子)', '축(丑)', '인(寅)', '묘(卯)', '진(辰)', '사(巳)', '오(午)', '미(未)', '신(申)', '유(酉)', '술(戌)', '해(亥)'];
+const JIJI_HANJA = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+
+// 천간 오행 매핑
+const CHEONGAN_ELEMENT = {
+    0: 'wood', 1: 'wood',   // 갑, 을 = 목
+    2: 'fire', 3: 'fire',   // 병, 정 = 화
+    4: 'earth', 5: 'earth', // 무, 기 = 토
+    6: 'metal', 7: 'metal', // 경, 신 = 금
+    8: 'water', 9: 'water'  // 임, 계 = 수
+};
+
+// 지지 오행 매핑
+const JIJI_ELEMENT = {
+    0: 'water',  // 자 = 수
+    1: 'earth',  // 축 = 토
+    2: 'wood',   // 인 = 목
+    3: 'wood',   // 묘 = 목
+    4: 'earth',  // 진 = 토
+    5: 'fire',   // 사 = 화
+    6: 'fire',   // 오 = 화
+    7: 'earth',  // 미 = 토
+    8: 'metal',  // 신 = 금
+    9: 'metal',  // 유 = 금
+    10: 'earth', // 술 = 토
+    11: 'water'  // 해 = 수
+};
+
+// 오행 정보
+const FIVE_ELEMENTS = {
+    wood:  { name: '木', kor: '목(나무)', icon: '🌳', color: '#4CAF50', numbers: [3, 8, 13, 18, 23, 28, 33, 38, 43] },
+    fire:  { name: '火', kor: '화(불)', icon: '🔥', color: '#F44336', numbers: [2, 7, 12, 17, 22, 27, 32, 37, 42] },
+    earth: { name: '土', kor: '토(흙)', icon: '🌍', color: '#FF9800', numbers: [5, 10, 15, 20, 25, 30, 35, 40, 45] },
+    metal: { name: '金', kor: '금(쇠)', icon: '⚙️', color: '#9E9E9E', numbers: [4, 9, 14, 19, 24, 29, 34, 39, 44] },
+    water: { name: '水', kor: '수(물)', icon: '💧', color: '#2196F3', numbers: [1, 6, 11, 16, 21, 26, 31, 36, 41] }
+};
+
+// 상생 관계 (나를 생해주는 오행 → 길한 기운)
+const SANGSAENG = {
+    wood: 'water',  // 수생목: 물이 나무를 기른다
+    fire: 'wood',   // 목생화: 나무가 불을 만든다
+    earth: 'fire',  // 화생토: 불이 흙을 만든다
+    metal: 'earth', // 토생금: 흙이 금을 만든다
+    water: 'metal'  // 금생수: 금이 물을 만든다
+};
+
+// 상극 관계 (나를 극하는 오행 → 피해야 할 기운)
+const SANGGEUK = {
+    wood: 'metal',  // 금극목
+    fire: 'water',  // 수극화
+    earth: 'wood',  // 목극토
+    metal: 'fire',  // 화극금
+    water: 'earth'  // 토극수
+};
+
+// 연주(年柱) 계산 - 입춘 기준
+function getYearPillar(year, month, day) {
+    // 입춘(대략 2월 4일) 이전이면 전년도로 계산
+    let adjustedYear = year;
+    if (month < 2 || (month === 2 && day < 4)) {
+        adjustedYear = year - 1;
+    }
+    const gan = (adjustedYear - 4) % 10;
+    const ji = (adjustedYear - 4) % 12;
+    return { gan: gan < 0 ? gan + 10 : gan, ji: ji < 0 ? ji + 12 : ji };
+}
+
+// 월주(月柱) 계산
+function getMonthPillar(year, month, day) {
+    // 절기 기준 월 (간략화: 각 월 5일 기준)
+    let adjustedMonth = month;
+    if (day < 5) adjustedMonth = month - 1;
+    if (adjustedMonth <= 0) adjustedMonth = 12;
+    
+    const yearGan = getYearPillar(year, month, day).gan;
+    // 월간 공식: (연간 * 2 + 월) % 10
+    const monthGan = (yearGan * 2 + adjustedMonth) % 10;
+    // 월지: 인월(1월)=2부터 시작
+    const monthJi = (adjustedMonth + 1) % 12;
+    
+    return { gan: monthGan, ji: monthJi };
+}
+
+// 일주(日柱) 계산 - 율리우스 적일 기반
+function getDayPillar(year, month, day) {
+    // 율리우스 적일 계산
+    const a = Math.floor((14 - month) / 12);
+    const y = year + 4800 - a;
+    const m = month + 12 * a - 3;
+    const jdn = day + Math.floor((153 * m + 2) / 5) + 365 * y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045;
+    
+    // 기준일: 1900년 1월 1일 = 갑자일
+    const baseJdn = 2415021;
+    const diff = jdn - baseJdn;
+    
+    const gan = ((diff % 10) + 10) % 10;
+    const ji = ((diff % 12) + 12) % 12;
+    
+    return { gan, ji };
+}
+
+// 시주(時柱) 계산 - 기본값 오시(午時, 11-13시)
+function getHourPillar(dayGan, hour = 12) {
+    // 시지 계산 (2시간 단위)
+    const hourJi = Math.floor((hour + 1) / 2) % 12;
+    // 시간 공식: (일간 * 2 + 시지) % 10
+    const hourGan = (dayGan * 2 + hourJi) % 10;
+    
+    return { gan: hourGan, ji: hourJi };
+}
+
+// 사주 전체 계산
+function calculateSaju(year, month, day, hour = 12) {
+    const yearPillar = getYearPillar(year, month, day);
+    const monthPillar = getMonthPillar(year, month, day);
+    const dayPillar = getDayPillar(year, month, day);
+    const hourPillar = getHourPillar(dayPillar.gan, hour);
+    
+    return {
+        year: yearPillar,
+        month: monthPillar,
+        day: dayPillar,
+        hour: hourPillar
+    };
+}
+
+// 오행 분포 계산
+function calculateElements(saju) {
+    const count = { wood: 0, fire: 0, earth: 0, metal: 0, water: 0 };
+    
+    // 천간 4개
+    count[CHEONGAN_ELEMENT[saju.year.gan]]++;
+    count[CHEONGAN_ELEMENT[saju.month.gan]]++;
+    count[CHEONGAN_ELEMENT[saju.day.gan]]++;
+    count[CHEONGAN_ELEMENT[saju.hour.gan]]++;
+    
+    // 지지 4개
+    count[JIJI_ELEMENT[saju.year.ji]]++;
+    count[JIJI_ELEMENT[saju.month.ji]]++;
+    count[JIJI_ELEMENT[saju.day.ji]]++;
+    count[JIJI_ELEMENT[saju.hour.ji]]++;
+    
+    return count;
+}
+
+// 운세 메시지 (오행별)
+const ELEMENT_FORTUNES = {
+    wood: {
+        title: '성장과 발전의 기운',
+        text: '목(木)의 기운이 강한 당신은 창의력과 추진력이 뛰어납니다. 새로운 시작에 유리한 시기입니다.',
+        tip: '💡 동쪽 방향과 초록색이 행운을 가져옵니다'
+    },
+    fire: {
+        title: '열정과 성취의 기운',
+        text: '화(火)의 기운이 강한 당신은 카리스마와 리더십이 넘칩니다. 적극적인 행동이 행운을 부릅니다.',
+        tip: '💡 남쪽 방향과 빨간색이 행운을 가져옵니다'
+    },
+    earth: {
+        title: '안정과 신뢰의 기운',
+        text: '토(土)의 기운이 강한 당신은 신뢰와 포용력을 갖추었습니다. 꾸준함이 큰 결실을 맺습니다.',
+        tip: '💡 중앙과 노란색이 행운을 가져옵니다'
+    },
+    metal: {
+        title: '결단과 정의의 기운',
+        text: '금(金)의 기운이 강한 당신은 명석한 판단력과 의지가 강합니다. 과감한 결정이 길합니다.',
+        tip: '💡 서쪽 방향과 흰색이 행운을 가져옵니다'
+    },
+    water: {
+        title: '지혜와 유연의 기운',
+        text: '수(水)의 기운이 강한 당신은 깊은 지혜와 적응력이 뛰어납니다. 흐름에 맡기면 좋은 결과가 옵니다.',
+        tip: '💡 북쪽 방향과 검은색이 행운을 가져옵니다'
+    }
+};
 
 function seededRandom(seed) {
     const x = Math.sin(seed) * 10000;
@@ -929,43 +1151,108 @@ function getFortune() {
         return;
     }
     
+    if (year < 1900 || year > 2025 || month < 1 || month > 12 || day < 1 || day > 31) {
+        showToast('올바른 생년월일을 입력해주세요');
+        return;
+    }
+    
+    // 사주 계산
+    const saju = calculateSaju(year, month, day);
+    const elements = calculateElements(saju);
+    const mainElement = CHEONGAN_ELEMENT[saju.day.gan]; // 일간이 본인
+    
+    // 사주 결과 표시
+    document.getElementById('sajuResult').style.display = 'block';
+    
+    // 사주 기둥 표시
+    document.getElementById('yearPillar').innerHTML = 
+        `<span style="color:${FIVE_ELEMENTS[CHEONGAN_ELEMENT[saju.year.gan]].color}">${CHEONGAN_HANJA[saju.year.gan]}</span>` +
+        `<span style="color:${FIVE_ELEMENTS[JIJI_ELEMENT[saju.year.ji]].color}">${JIJI_HANJA[saju.year.ji]}</span>`;
+    document.getElementById('monthPillar').innerHTML = 
+        `<span style="color:${FIVE_ELEMENTS[CHEONGAN_ELEMENT[saju.month.gan]].color}">${CHEONGAN_HANJA[saju.month.gan]}</span>` +
+        `<span style="color:${FIVE_ELEMENTS[JIJI_ELEMENT[saju.month.ji]].color}">${JIJI_HANJA[saju.month.ji]}</span>`;
+    document.getElementById('dayPillar').innerHTML = 
+        `<span style="color:${FIVE_ELEMENTS[CHEONGAN_ELEMENT[saju.day.gan]].color}">${CHEONGAN_HANJA[saju.day.gan]}</span>` +
+        `<span style="color:${FIVE_ELEMENTS[JIJI_ELEMENT[saju.day.ji]].color}">${JIJI_HANJA[saju.day.ji]}</span>`;
+    document.getElementById('hourPillar').innerHTML = 
+        `<span style="color:${FIVE_ELEMENTS[CHEONGAN_ELEMENT[saju.hour.gan]].color}">${CHEONGAN_HANJA[saju.hour.gan]}</span>` +
+        `<span style="color:${FIVE_ELEMENTS[JIJI_ELEMENT[saju.hour.ji]].color}">${JIJI_HANJA[saju.hour.ji]}</span>`;
+    
+    // 오행 분포 표시
+    document.getElementById('fiveElements').innerHTML = Object.entries(elements).map(([el, cnt]) => 
+        `<div>
+            <div style="font-size:24px;">${FIVE_ELEMENTS[el].icon}</div>
+            <div style="font-size:12px;color:${FIVE_ELEMENTS[el].color};margin-top:5px;">${FIVE_ELEMENTS[el].name}</div>
+            <div style="font-size:16px;font-weight:700;color:#fff;">${cnt}</div>
+        </div>`
+    ).join('');
+    
+    // 일간(본인) 오행 표시
+    document.getElementById('mainElementIcon').textContent = FIVE_ELEMENTS[mainElement].icon;
+    document.getElementById('mainElementName').textContent = FIVE_ELEMENTS[mainElement].name;
+    document.getElementById('mainElementName').style.color = FIVE_ELEMENTS[mainElement].color;
+    document.getElementById('mainElementKor').textContent = FIVE_ELEMENTS[mainElement].kor;
+    
+    // 운세 결과
+    const fortune = ELEMENT_FORTUNES[mainElement];
+    document.getElementById('fortuneResult').style.display = 'block';
+    document.getElementById('fortuneEmoji').textContent = FIVE_ELEMENTS[mainElement].icon;
+    document.getElementById('fortuneTitle').textContent = fortune.title;
+    document.getElementById('fortuneText').textContent = fortune.text;
+    document.getElementById('fortuneTip').textContent = fortune.tip;
+    
+    // 행운 번호 생성 (오행 상생 기반)
     const today = new Date();
     const todaySeed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
     const birthSeed = year * 10000 + month * 100 + day;
     const combinedSeed = todaySeed + birthSeed;
     
-    const fortuneIndex = Math.floor(seededRandom(combinedSeed) * fortunes.length);
-    const f = fortunes[fortuneIndex];
+    // 상생 오행 번호 우선
+    const helpingElement = SANGSAENG[mainElement];
+    const luckyPool = [
+        ...FIVE_ELEMENTS[mainElement].numbers,      // 본인 오행 번호
+        ...FIVE_ELEMENTS[helpingElement].numbers    // 상생 오행 번호
+    ];
     
-    let nums = [], pool = Array.from({length: 45}, (_, i) => i + 1);
-    for (let i = 0; i < 6; i++) {
+    let nums = [];
+    let pool = [...luckyPool];
+    
+    // 상생 번호에서 4개 선택
+    for (let i = 0; i < 4 && pool.length > 0; i++) {
         const idx = Math.floor(seededRandom(combinedSeed + i * 1234) * pool.length);
         nums.push(pool.splice(idx, 1)[0]);
     }
+    
+    // 나머지 2개는 전체에서 선택 (중복 제외)
+    let allPool = Array.from({length: 45}, (_, i) => i + 1).filter(n => !nums.includes(n));
+    for (let i = 0; i < 2; i++) {
+        const idx = Math.floor(seededRandom(combinedSeed + (i + 4) * 5678) * allPool.length);
+        nums.push(allPool.splice(idx, 1)[0]);
+    }
+    
     nums.sort((a, b) => a - b);
     
-    // 중복 체크
+    // 역대 당첨번호 중복 체크
     let offset = 0;
     while (pastSet.has(nums.join(',')) && offset < 100) {
         offset++;
-        pool = Array.from({length: 45}, (_, i) => i + 1);
         nums = [];
-        for (let i = 0; i < 6; i++) {
-            const idx = Math.floor(seededRandom(combinedSeed + i * 5678 + offset * 999) * pool.length);
+        pool = [...luckyPool];
+        for (let i = 0; i < 4 && pool.length > 0; i++) {
+            const idx = Math.floor(seededRandom(combinedSeed + i * 9999 + offset * 777) * pool.length);
             nums.push(pool.splice(idx, 1)[0]);
+        }
+        allPool = Array.from({length: 45}, (_, i) => i + 1).filter(n => !nums.includes(n));
+        for (let i = 0; i < 2; i++) {
+            const idx = Math.floor(seededRandom(combinedSeed + (i + 4) * 8888 + offset * 666) * allPool.length);
+            nums.push(allPool.splice(idx, 1)[0]);
         }
         nums.sort((a, b) => a - b);
     }
     
-    document.getElementById('fortuneResult').style.display = 'block';
-    document.getElementById('fortuneEmoji').textContent = f.emoji;
-    document.getElementById('fortuneTitle').textContent = f.title;
-    document.getElementById('fortuneText').textContent = f.text;
     document.getElementById('fortuneNumbers').innerHTML = nums.map(n => createBall(n)).join('');
-    document.getElementById('fortuneTip').textContent = tips[Math.floor(seededRandom(combinedSeed + 9999) * tips.length)];
-    document.getElementById('fortuneResult').scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('sajuResult').scrollIntoView({ behavior: 'smooth' });
 }
-
 // ============================================
 // 통계
 // ============================================
@@ -1004,4 +1291,3 @@ updateStats();
 
 </body>
 </html>
-
