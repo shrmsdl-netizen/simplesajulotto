@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-9SYCKLSKD6"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-9SYCKLSKD6');
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🍀 심플 사주 로또</title>
@@ -840,6 +848,13 @@ function switchTab(tabName) {
 // 번호 생성
 // ============================================
 function generateNumbers() {
+    // 구글 통계 전송 (CCTV)
+    if (typeof gtag !== 'undefined') {
+        gtag('event', 'click_generate', {
+            'event_category': 'lotto_button',
+            'event_label': 'main_generate'
+        });
+    }
     const container = document.getElementById('generatedNumbers');
     const btn = document.querySelector('.main-generate .btn');
     
