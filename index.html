@@ -651,8 +651,66 @@ footer.tab-footer.active { display: block; }
 </style>
 <!-- Kakao SDK -->
 <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" integrity="sha384-TiCUE00h649CAMonG018J2ujOgDKW/kVWlChEuu4jK2vxfAAD0eZxzCKakxg55G4" crossorigin="anonymous"></script>
+<script>
+// 🔒 복사 방지 스크립트
+(function(){
+    // 우클릭 방지
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        return false;
+    });
+    
+    // 키보드 단축키 방지 (F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U)
+    document.addEventListener('keydown', function(e) {
+        // F12
+        if (e.key === 'F12' || e.keyCode === 123) {
+            e.preventDefault();
+            return false;
+        }
+        // Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
+        if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C' || e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) {
+            e.preventDefault();
+            return false;
+        }
+        // Ctrl+U (소스보기)
+        if (e.ctrlKey && (e.key === 'u' || e.key === 'U' || e.keyCode === 85)) {
+            e.preventDefault();
+            return false;
+        }
+        // Ctrl+S (저장)
+        if (e.ctrlKey && (e.key === 's' || e.key === 'S' || e.keyCode === 83)) {
+            e.preventDefault();
+            return false;
+        }
+    });
+    
+    // 드래그 선택 방지
+    document.addEventListener('selectstart', function(e) {
+        if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+            return false;
+        }
+    });
+    
+    // 개발자 도구 감지 (콘솔 열림 감지)
+    (function() {
+        const threshold = 160;
+        const check = function() {
+            if (window.outerWidth - window.innerWidth > threshold || 
+                window.outerHeight - window.innerHeight > threshold) {
+                document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#1a1a2e;color:#fdd835;font-size:24px;text-align:center;padding:20px;">🔒 개발자 도구 사용이 감지되었습니다<br><br>이 페이지는 보호되어 있습니다</div>';
+            }
+        };
+        setInterval(check, 1000);
+    })();
+    
+    // 콘솔 경고 메시지
+    console.log('%c⚠️ 경고!', 'color: red; font-size: 50px; font-weight: bold;');
+    console.log('%c이 코드는 저작권으로 보호됩니다. 무단 복제 시 법적 책임을 질 수 있습니다.', 'color: red; font-size: 16px;');
+})();
+</script>
 </head>
-<body>
+<body style="-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;">
 
 <!-- 워터마크 배경 -->
 <div class="watermark">
@@ -6828,5 +6886,12 @@ function saveImage() {
     toast('스크린샷으로 저장해주세요 📱');
 }
 </script>
+
+<!-- 저작권 표시 -->
+<div style="text-align:center;padding:20px;color:#555;font-size:11px;">
+    © 2025 사주로또 Pro. All Rights Reserved.<br>
+    <span style="font-size:10px;color:#444;">이 서비스의 모든 콘텐츠와 코드는 저작권법에 의해 보호됩니다.</span>
+</div>
+
 </body>
 </html>
