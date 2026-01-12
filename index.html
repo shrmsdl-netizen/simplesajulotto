@@ -55,18 +55,28 @@ body {
 /* 워터마크 배경 (검객 이미지) */
 .watermark {
     position: fixed;
-    top: 50%;
+    top: 140px;
     left: 50%;
-    transform: translate(-50%, -50%);
-    width: 90%;
-    height: 90%;
-    background-image: url('share-thumbnail.png');
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    opacity: 0.20;
+    transform: translateX(-50%);
+    width: 500px;
+    max-width: 100%;
+    opacity: 0.15;
     z-index: 999;
     pointer-events: none;
+}
+.watermark img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* 모바일: 양옆 꽉 차게 */
+@media (max-width: 600px) {
+    .watermark {
+        width: 100%;
+        left: 0;
+        transform: none;
+    }
 }
 
 /* ========================================
@@ -188,7 +198,6 @@ header p {
     position: sticky;
     top: 0;
     z-index: 100;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 .top-nav button {
     background: rgba(255,255,255,0.05);
@@ -586,7 +595,6 @@ footer.tab-footer {
     display: none;
     text-align: center;
     padding: 30px 20px;
-    border-top: 1px solid rgba(255,255,255,0.1);
     color: #666;
     font-size: 11px;
     line-height: 1.8;
@@ -599,7 +607,6 @@ footer.tab-footer.active { display: block; }
     padding: 20px;
     background: linear-gradient(145deg, rgba(253,216,53,0.08), rgba(255,215,0,0.03));
     border-radius: 15px;
-    border: 1px solid rgba(253,216,53,0.2);
     text-align: center;
 }
 .share-title {
@@ -648,7 +655,9 @@ footer.tab-footer.active { display: block; }
 <body>
 
 <!-- 워터마크 배경 -->
-<div class="watermark"></div>
+<div class="watermark">
+    <img src="share-thumbnail.png" alt="" onerror="this.parentElement.style.display='none'">
+</div>
 
 <!-- ========================================
      팔괘 장식 (사방)
@@ -1053,7 +1062,7 @@ footer.tab-footer.active { display: block; }
 </footer>
 
 <footer id="footer-saju" class="tab-footer active">
-    <div style="border-top:1px solid rgba(253,216,53,0.2);padding-top:25px;margin-bottom:20px;">
+    <div style="padding-top:25px;margin-bottom:20px;">
         <p style="color:var(--gold);font-size:13px;margin-bottom:15px;">☯ 고전 명리학의 정수(精髓)</p>
         <p style="font-size:12px;line-height:2;color:#999;">
             <strong style="color:var(--gold);">『적천수(滴天髓)』</strong> · 
