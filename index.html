@@ -753,14 +753,21 @@ footer.tab-footer.active { display: block; }
         <div id="history-list"></div>
     </div>
     
-    <!-- 후원 -->
-    <div class="card" style="text-align:center;padding:30px;">
-        <p style="color:var(--gray);font-size:13px;line-height:2;margin-bottom:20px;">
-            행운은 순수한 흐름 속에 깃듭니다.<br>
-            이곳은 일체의 광고를 배제한 <strong style="color:var(--gold);">청정 구역</strong>입니다.<br>
-            서버 유지는 자발적 후원으로만 이루어집니다.
+    <!-- 복채 -->
+    <div class="card" style="text-align:center;padding:25px;">
+        <p style="color:var(--gold);font-size:14px;margin-bottom:8px;">🙏 복채(福債)</p>
+        <p style="color:#ddd;font-size:13px;line-height:1.8;margin-bottom:5px;">
+            점괘를 보셨으니, 복채는 예(禮)입니다.
         </p>
-        <button class="btn outline" onclick="copyAccount()">☕ 후원하기 (계좌 복사)</button>
+        <p style="color:#aaa;font-size:12px;margin-bottom:15px;">
+            나눈 복은 배가 되어 돌아옵니다.
+        </p>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <a href="https://qr.kakaopay.com/FGskvpJmd" target="_blank" style="padding:10px 20px;background:#FEE500;color:#3C1E1E;font-weight:600;border-radius:20px;text-decoration:none;font-size:13px;">
+                💛 카카오페이
+            </a>
+            <button class="btn outline" style="padding:10px 20px;font-size:13px;" onclick="copyAccount()">🏦 계좌복사</button>
+        </div>
     </div>
 </div>
 
@@ -1048,6 +1055,25 @@ footer.tab-footer.active { display: block; }
             </button>
             <button class="share-btn copy-link" onclick="copyShareLink()">
                 🔗 링크 복사
+            </button>
+        </div>
+    </div>
+    
+    <!-- 복채 섹션 -->
+    <div style="margin-top:20px;padding:20px;background:linear-gradient(145deg, rgba(255,215,0,0.1), rgba(255,180,0,0.05));border-radius:15px;text-align:center;">
+        <p style="font-size:1rem;color:var(--gold);margin-bottom:10px;">🙏 복채(福債)</p>
+        <p style="font-size:0.95rem;color:#ddd;margin-bottom:5px;line-height:1.7;">
+            점괘를 보셨으니, 복채는 예(禮)입니다.
+        </p>
+        <p style="font-size:0.9rem;color:#aaa;margin-bottom:18px;">
+            나눈 복은 배가 되어 돌아옵니다.
+        </p>
+        <div style="display:flex;flex-direction:column;gap:10px;align-items:center;">
+            <a href="https://qr.kakaopay.com/FGskvpJmd" target="_blank" style="display:inline-block;width:220px;padding:12px 20px;background:#FEE500;color:#3C1E1E;font-weight:600;border-radius:25px;text-decoration:none;font-size:0.9rem;">
+                💛 카카오페이
+            </a>
+            <button onclick="copyAccount()" style="width:220px;padding:12px 20px;background:rgba(255,255,255,0.1);color:var(--gold);font-weight:600;border-radius:25px;border:1px solid var(--gold);font-size:0.9rem;cursor:pointer;">
+                🏦 계좌복사 (케이뱅크)
             </button>
         </div>
     </div>
