@@ -1297,60 +1297,54 @@ function initKakao() {
 }
 
 function shareKakao() {
-    // 카카오 SDK가 초기화되지 않은 경우 대체 공유
-    if (typeof Kakao === 'undefined' || !Kakao.isInitialized()) {
-        // 카카오톡 공유 URL scheme 사용 (모바일)
-        const shareText = encodeURIComponent(getShareText());
-        const shareUrl = encodeURIComponent(window.location.href);
-        
-        // 모바일 카카오톡 열기 시도
-        if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
-            window.location.href = `kakaotalk://msg/text?text=${shareText}%0A${shareUrl}`;
-            setTimeout(() => {
-                // 카카오톡이 없으면 웹 공유
-                if (navigator.share) {
-                    navigator.share({
-                        title: '🍀 사주로또 Pro',
-                        text: getShareText(),
-                        url: window.location.href
-                    });
-                } else {
+    const shareData = {
+        title: '🍀 사주로또 Pro',
+        text: '천년 명리학의 지혜를 현대적으로 구현한 사주 분석 앱\n\n✨ 전문가 수준 사주팔자 분석\n💕 과학적 궁합 진단\n🍀 역대 당첨번호 제외 로또',
+        url: window.location.href
+    };
+    
+    // 1. Web Share API 지원 시 (모바일 브라우저)
+    if (navigator.share) {
+        navigator.share(shareData)
+            .then(() => toast('공유 완료! 🎉'))
+            .catch((err) => {
+                if (err.name !== 'AbortError') {
                     copyShareLink();
                 }
-            }, 500);
-        } else {
-            copyShareLink();
-            toast('💡 카카오 개발자 키 설정 후 공유 가능합니다');
-        }
+            });
         return;
     }
     
-    try {
-        Kakao.Share.sendDefault({
-            objectType: 'feed',
-            content: {
-                title: '🍀 사주로또 Pro',
-                description: getShareText(),
-                imageUrl: getShareImageUrl(),
-                link: {
-                    mobileWebUrl: window.location.href,
-                    webUrl: window.location.href
-                }
-            },
-            buttons: [
-                {
+    // 2. 카카오 SDK 초기화된 경우
+    if (typeof Kakao !== 'undefined' && Kakao.isInitialized()) {
+        try {
+            Kakao.Share.sendDefault({
+                objectType: 'feed',
+                content: {
+                    title: '🍀 사주로또 Pro',
+                    description: getShareText(),
+                    imageUrl: getShareImageUrl(),
+                    link: {
+                        mobileWebUrl: window.location.href,
+                        webUrl: window.location.href
+                    }
+                },
+                buttons: [{
                     title: '나도 운세 보기',
                     link: {
                         mobileWebUrl: window.location.href,
                         webUrl: window.location.href
                     }
-                }
-            ]
-        });
-    } catch(e) {
-        console.error('Kakao share error:', e);
-        copyShareLink();
+                }]
+            });
+            return;
+        } catch(e) {
+            console.error('Kakao share error:', e);
+        }
     }
+    
+    // 3. 폴백: 링크 복사
+    copyShareLink();
 }
 
 function getShareText() {
