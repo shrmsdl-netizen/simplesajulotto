@@ -6,6 +6,25 @@
 <title>🍀 사주로또 Pro - 운명의 번호</title>
 <meta name="description" content="사주팔자 기반 로또 번호 생성. 역대 당첨번호 100% 제외. 전문 사주 분석.">
 
+<!-- 🔒 Copy Protection v25 -->
+<script>
+(function(){
+    // 우클릭 방지
+    document.addEventListener('contextmenu',function(e){e.preventDefault();return false;});
+    // 키보드 단축키 방지 (F12, Ctrl+U, Ctrl+S, Ctrl+Shift+I/J/C)
+    document.addEventListener('keydown',function(e){
+        if(e.key==='F12'||(e.ctrlKey&&e.key==='u')||(e.ctrlKey&&e.key==='s')||
+           (e.ctrlKey&&e.shiftKey&&['i','j','c'].includes(e.key.toLowerCase()))){
+            e.preventDefault();return false;
+        }
+    });
+    // 텍스트 선택 방지
+    document.addEventListener('selectstart',function(e){if(e.target.tagName!=='INPUT'&&e.target.tagName!=='TEXTAREA')e.preventDefault();});
+    // 드래그 방지
+    document.addEventListener('dragstart',function(e){e.preventDefault();});
+})();
+</script>
+
 <!-- Open Graph / 카카오톡 공유 썸네일 -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="🍀 사주로또 Pro - 천년 명리학의 지혜">
@@ -652,49 +671,9 @@ footer.tab-footer.active { display: block; }
 <!-- Kakao SDK -->
 <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" integrity="sha384-TiCUE00h649CAMonG018J2ujOgDKW/kVWlChEuu4jK2vxfAAD0eZxzCKakxg55G4" crossorigin="anonymous"></script>
 <script>
-// 🔒 복사 방지 스크립트
-(function(){
-    // 우클릭 방지
-    document.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-        return false;
-    });
-    
-    // 키보드 단축키 방지 (F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U)
-    document.addEventListener('keydown', function(e) {
-        // F12
-        if (e.key === 'F12' || e.keyCode === 123) {
-            e.preventDefault();
-            return false;
-        }
-        // Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
-        if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C' || e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) {
-            e.preventDefault();
-            return false;
-        }
-        // Ctrl+U (소스보기)
-        if (e.ctrlKey && (e.key === 'u' || e.key === 'U' || e.keyCode === 85)) {
-            e.preventDefault();
-            return false;
-        }
-        // Ctrl+S (저장)
-        if (e.ctrlKey && (e.key === 's' || e.key === 'S' || e.keyCode === 83)) {
-            e.preventDefault();
-            return false;
-        }
-    });
-    
-    // 드래그 선택 방지
-    document.addEventListener('selectstart', function(e) {
-        if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-            e.preventDefault();
-            return false;
-        }
-    });
-})();
 </script>
 </head>
-<body style="-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;">
+<body >
 
 <!-- 워터마크 배경 -->
 <div class="watermark">
@@ -2342,7 +2321,7 @@ function calcStrength(saju) {
     else if (score <= -5) { type = 'weak'; extreme = '극신약'; }
     else if (score <= 2) type = 'weak';
     
-    return { type, score: Math.round(score * 10) / 10, pct: Math.min(100, Math.max(0, (score + 5) * 4)), factors, extreme };
+    return { type, score: Math.round(score * 10) / 10, pct: Math.round(Math.min(100, Math.max(0, (score + 5) * 4)) * 10) / 10, factors, extreme };
 }
 
 /* ========================================
@@ -3039,11 +3018,71 @@ function calcFormat(saju, strength) {
     
     // 투출된 십신이 있으면 그걸 격국으로
     let finalGod = god.k;
+    let formatReason = '월지 정기';
+    
     if (['식신','상관','편재','정재','편관','정관','편인','정인'].includes(monthGod.k)) {
         // 월간이 월지 지장간에 통근하는지 확인
         const monthStemIdx = STEM.indexOf(saju.month.s);
         if (jj.some(j => j.stem === monthStemIdx)) {
             finalGod = monthGod.k; // 투출된 십신이 격국
+            formatReason = '월간 투출+월지 통근';
+        }
+        
+        // [v25 NEW] 삼합/반합 세력 체크 - Gemini 피드백 반영
+        // 월간이 월지에 통근하지 않더라도 삼합/반합으로 강한 세력을 형성하면 격국으로 인정
+        const brs = [BRANCH.indexOf(saju.year.b), mbi, BRANCH.indexOf(saju.day.b)];
+        if (saju.hour) brs.push(BRANCH.indexOf(saju.hour.b));
+        
+        const samhapSets = [
+            {branches: [2,6,10], result: 'fire', name: '인오술 화국'},
+            {branches: [5,9,1], result: 'metal', name: '사유축 금국'},
+            {branches: [8,0,4], result: 'water', name: '신자진 수국'},
+            {branches: [11,3,7], result: 'wood', name: '해묘미 목국'}
+        ];
+        
+        const monthStemElement = saju.month.s.e; // 월간의 오행
+        
+        for (const sh of samhapSets) {
+            const hasCount = sh.branches.filter(b => brs.includes(b)).length;
+            const hasCenter = brs.includes(sh.branches[1]); // 왕지(중심) 존재 여부
+            
+            // 반합 이상이고 왕지가 있으면서 월간 오행이 삼합 결과 오행과 같으면
+            if (hasCount >= 2 && hasCenter) {
+                const resultElementKey = sh.result;
+                // 월간 오행이 삼합 결과와 일치하는지 체크
+                if (monthStemElement === resultElementKey) {
+                    finalGod = monthGod.k;
+                    formatReason = hasCount === 3 ? 
+                        `월간 투출+${sh.name} 완성` : 
+                        `월간 투출+${sh.name} 반합(왕지 포함)`;
+                    break;
+                }
+            }
+        }
+        
+        // [v25 NEW] 월간이 다른 지지(년지, 일지, 시지)에 통근하면서 삼합/반합 세력이 있으면 격국 인정
+        if (finalGod !== monthGod.k) {
+            const otherBranches = [saju.year.b, saju.day.b];
+            if (saju.hour) otherBranches.push(saju.hour.b);
+            
+            for (const br of otherBranches) {
+                const brIdx = BRANCH.indexOf(br);
+                const brJj = JIJANGGAN[brIdx];
+                // 월간이 다른 지지의 지장간에 통근하는지
+                if (brJj.some(j => j.stem === monthStemIdx)) {
+                    // 해당 지지가 삼합/반합의 일부인지 체크
+                    for (const sh of samhapSets) {
+                        const hasCount = sh.branches.filter(b => brs.includes(b)).length;
+                        const hasCenter = brs.includes(sh.branches[1]);
+                        if (hasCount >= 2 && hasCenter && sh.branches.includes(brIdx)) {
+                            finalGod = monthGod.k;
+                            formatReason = `월간 투출+${br.c}지 통근+${sh.name.split(' ')[0]} 반합`;
+                            break;
+                        }
+                    }
+                    if (finalGod === monthGod.k) break;
+                }
+            }
         }
     }
     
@@ -3062,7 +3101,8 @@ function calcFormat(saju, strength) {
         type: 'inner',
         broken: breakReasons.length > 0,
         breakReasons,
-        tougan: monthGod.k !== god.k ? monthGod.k : null
+        tougan: monthGod.k !== god.k ? monthGod.k : null,
+        formatReason // [v25 NEW] 격국 판정 근거 추가
     };
 }
 
@@ -3264,6 +3304,47 @@ function analyzeLuckCross(saju, birthYear, gender, gods, targetYear) {
                          result.totalScore >= 2 ? 'good' : 
                          result.totalScore >= 0 ? 'neutral' : 
                          result.totalScore >= -2 ? 'caution' : 'difficult';
+    
+    // [v25 NEW] 탕화살 중첩 경고 - Gemini 피드백 반영
+    // 원국에 축오(丑午) 또는 인사(寅巳)가 있고 세운에서 午/巳가 오면 쌍탕화 경고
+    const tanghwaCheck = () => {
+        const hasChu = allBi.includes(1);  // 축(丑) = 1
+        const hasO = allBi.includes(6);     // 오(午) = 6
+        const hasIn = allBi.includes(2);    // 인(寅) = 2
+        const hasSa = allBi.includes(5);    // 사(巳) = 5
+        
+        // 축오 탕화 원국에 있는지
+        const hasChuOTanghwa = hasChu && hasO;
+        // 인사 탕화 원국에 있는지
+        const hasInSaTanghwa = hasIn && hasSa;
+        
+        // 세운 지지
+        const saeunBi = sbi;
+        
+        // 쌍탕화 체크
+        if (hasChuOTanghwa && saeunBi === 6) {
+            result.analysis.push({
+                type: 'danger', 
+                text: '⚠️ 쌍탕화(雙湯火) 경고! 원국의 축오 탕화에 세운 午가 중첩됩니다. 감정 폭발, 화병, 정신적 스트레스가 극에 달할 수 있어요. 분노 조절과 멘탈 관리가 특히 중요합니다!'
+            });
+            result.tanghwaWarning = true;
+        }
+        if (hasInSaTanghwa && saeunBi === 5) {
+            result.analysis.push({
+                type: 'danger', 
+                text: '⚠️ 쌍탕화(雙湯火) 경고! 원국의 인사 탕화에 세운 巳가 중첩됩니다. 화상, 열병, 약물 부작용에 특히 조심하세요!'
+            });
+            result.tanghwaWarning = true;
+        }
+        // 축오 원국 + 세운 사(巳)도 탕화 가중
+        if (hasChuOTanghwa && saeunBi === 5) {
+            result.analysis.push({
+                type: 'warning', 
+                text: '🔥 탕화살 가중! 세운의 火 기운이 원국 탕화를 자극합니다. 화기 취급 주의!'
+            });
+        }
+    };
+    tanghwaCheck();
     
     return result;
 }
@@ -6017,6 +6098,34 @@ function copySajuForAI() {
             }
         } catch(e) { next10Text = '• 10년 운세 데이터 없음'; }
         
+        // [v25 NEW] 탕화 중첩 경고 체크
+        let tanghwaWarningText = '';
+        try {
+            const currentYear = new Date().getFullYear();
+            const yp = calcYearPillar(currentYear, 6, 1);
+            const sbi = BRANCH.indexOf(yp.b);
+            const allBi = [BRANCH.indexOf(SAJU.year.b), BRANCH.indexOf(SAJU.month.b), BRANCH.indexOf(SAJU.day.b)];
+            if (SAJU.hour) allBi.push(BRANCH.indexOf(SAJU.hour.b));
+            
+            const hasChu = allBi.includes(1);  // 축(丑) = 1
+            const hasO = allBi.includes(6);    // 오(午) = 6
+            const hasIn = allBi.includes(2);   // 인(寅) = 2
+            const hasSa = allBi.includes(5);   // 사(巳) = 5
+            
+            // 축오 탕화 + 세운 午
+            if (hasChu && hasO && sbi === 6) {
+                tanghwaWarningText = `\n⚠️ ${currentYear}년 쌍탕화(雙湯火) 경고! 원국 축오 탕화 + 세운 午 중첩. 감정 폭발, 화병 특별 주의!`;
+            }
+            // 인사 탕화 + 세운 巳
+            if (hasIn && hasSa && sbi === 5) {
+                tanghwaWarningText = `\n⚠️ ${currentYear}년 쌍탕화 경고! 원국 인사 탕화 + 세운 巳 중첩. 화상, 열병, 약물 부작용 주의!`;
+            }
+            // 축오 탕화 + 용신이 火 + 세운이 丙午(병오)면 대발복 기회
+            if ((hasChu || hasO) && GODS.yong === 'fire' && yp.s.c === '丙' && yp.b.c === '午') {
+                tanghwaWarningText += `\n🔥 ${currentYear}년 용신(火) 강력 유입! 대발복의 기회이나 감정 조절 필수!`;
+            }
+        } catch(e) { /* 탕화 체크 실패 */ }
+        
         // 올해 월운 (안전하게)
         let monthText = '';
         try {
@@ -6139,6 +6248,7 @@ ${GODS.climate ? '• 한난조습: ' + GODS.climate.type + ' - ' + GODS.climate
 • ${format.n}
 • 특징: ${format.d}
 • 적합 분야: ${format.b}
+${format.formatReason ? '• 판정 근거: ' + format.formatReason : ''}
 
 【60갑자 일주론 - ${SAJU.day.s.c}${SAJU.day.b.c}일주】
 • ${ilju.title}
@@ -6191,7 +6301,7 @@ ${luck.slice(0,8).map(l => '• ' + l.startAge + '-' + l.endAge + '세: ' + l.s.
 【현재 운세】
 • 현재 대운: ${curLuck ? curLuck.s.c + curLuck.b.c + ' (' + curLuck.startAge + '-' + curLuck.endAge + '세)' : '계산 중'}
 • 대운 평가: ${curLuck ? (curLuck.rating === 'good' ? '길운' : curLuck.rating === 'bad' ? '흉운' : '평운') : '-'}
-• ${currentYear}년 세운: ${(() => { const yp = calcYearPillar(currentYear, 6, 1); return yp.s.c + yp.b.c + ' (' + ELEMENT[yp.s.e].k + ELEMENT[yp.b.e].k + ')'; })()}
+• ${currentYear}년 세운: ${(() => { const yp = calcYearPillar(currentYear, 6, 1); return yp.s.c + yp.b.c + ' (' + ELEMENT[yp.s.e].k + ELEMENT[yp.b.e].k + ')'; })()}${tanghwaWarningText}
 
 【향후 10년 운세 미리보기】
 ${next10Text}
@@ -6281,6 +6391,16 @@ ${monthText}
     - 여성 사주에서 관성(목)이 지장간에만 있는데 주변이 화(火) 일색이면
     - "암장된 실속형 배우자"가 아니라 "타버린 나무, 위태로운 배우자"
     - 해석: "남편이 무능하거나 아플 수 있음, 본인이 가장 역할 해야 함"
+
+17. 격국과 세력의 괴리 보정:
+    - 데이터상 '비견격'으로 되어 있더라도, 관살(편관)의 세력이 월등히 강하다면(투출 및 합국 등) '편관격'의 관점에서 해석하세요.
+    - 즉, "고집이 세다"보다는 "막중한 책임감과 스트레스를 감내하고 있다"로 해석해야 합니다.
+    - 예: 월간 乙목 투출 + 해묘 반합 목국 = 편관의 세력이 강함 → 편관격으로 봐야 함
+
+18. 축오(丑午) 탕화와 세운의 중첩:
+    - 원국에 축오가 있고 세운에서 오(午)가 오는 해는 기존의 인간관계나 정신적 스트레스가 폭발하거나 재조정되는 시기입니다.
+    - 긍정적으로는 '오래된 문제를 수술하듯 도려내는 해', 부정적으로는 '감정적 폭발'로 해석해 주세요.
+    - 용신이 火인 사주에게 병오(丙午)년이 오면 "대발복의 기회이나 감정 조절 필수"로 톤을 높여야 합니다.
 
 [분석 요청사항]
 위 사주팔자 정보를 바탕으로 다음을 각각 상세히 서술형으로 해석해 주세요:
