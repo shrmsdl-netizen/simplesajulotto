@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<!-- 🔒 Copy Protection v26 -->
+<!-- 🔒 Copy Protection v27 -->
 <script>
 (function(){
     document.addEventListener('contextmenu',function(e){e.preventDefault();return false;});
@@ -1666,14 +1666,15 @@ function lunarToSolar(ly, lm, ld) {
 }
 
 function adjustTime(y, m, d, h) {
+    // [v26 FIX] h는 시지 인덱스(0-11)로 입력됨
+    // 사용자가 직접 시지를 선택하므로 서머타임/30분 보정 불필요
+    // 단, 자시(h=0)의 경우 야자시(23:30~00:29) 처리 고려
+    // 현재는 모두 조자시(00:30~01:29)로 가정
     if (h < 0) return { y, m, d, h };
-    let hour = h;
-    const isDST = ((y >= 1948 && y <= 1951) || (y >= 1955 && y <= 1960) || (y >= 1987 && y <= 1988));
-    if (isDST) hour -= 1;
-    hour = hour - 0.5; // 30분 보정
-    if (hour < 0) { hour += 12; d -= 1; }
-    if (d < 1) { m -= 1; if (m < 1) { m = 12; y -= 1; } d = 28; }
-    return { y, m, d, h: Math.floor(hour) };
+    
+    // 자시(h=0)의 야자시 처리: 전날로 처리할지 여부는 사용자 선택에 맡김
+    // 현재는 h를 그대로 사용
+    return { y, m, d, h };
 }
 
 /* ========================================
@@ -1730,50 +1731,82 @@ function calcYearPillar(y, m, d, h, n) {
 }
 
 function calcMonthPillar(y, m, d, h, n) {
-    // [v25 FIX] 정확한 절기 시각으로 월주 계산
-    // 각 월의 절기: 2월=입춘, 3월=경칩, 4월=청명, 5월=입하, 6월=망종, 
-    //              7월=소서, 8월=입추, 9월=백로, 10월=한로, 11월=입동, 12월=대설, 1월=소한(전년 12월)
+    // [v27 FIX] 월주 계산 완전 재작성 - 절기월 기반
+    // 
+    // 절기와 월지의 관계:
+    // - 입춘(2월) → 인월(寅) = 절기월 1
+    // - 경칩(3월) → 묘월(卯) = 절기월 2
+    // - 청명(4월) → 진월(辰) = 절기월 3
+    // - 입하(5월) → 사월(巳) = 절기월 4
+    // - 망종(6월) → 오월(午) = 절기월 5
+    // - 소서(7월) → 미월(未) = 절기월 6
+    // - 입추(8월) → 신월(申) = 절기월 7
+    // - 백로(9월) → 유월(酉) = 절기월 8
+    // - 한로(10월) → 술월(戌) = 절기월 9
+    // - 입동(11월) → 해월(亥) = 절기월 10
+    // - 대설(12월) → 자월(子) = 절기월 11
+    // - 소한(1월) → 축월(丑) = 절기월 12
     
-    let adjM = m;
-    let adjY = y;
+    let solarMonth;  // 절기월 (1-12)
     
-    // 1월인 경우 전년도 12월(대설 절기) 기준
+    // 1. 해당 월의 절기 전인지 확인
+    // SOLAR_TERMS 인덱스: 0=입춘(2월), 1=경칩(3월), ... 10=대설(12월)
+    // 1월 소한은 데이터 없음 → 1월 6일 기준으로 처리
+    
+    let beforeTerm;
     if (m === 1) {
-        // 1월의 절기(소한)는 별도 처리 필요 - 여기서는 간략화
-        adjM = 12;
-        adjY = y - 1;
-    } else if (m >= 2 && m <= 12) {
-        // 해당 월의 절기 이전이면 전월로 계산
-        const termIndex = m - 2; // 2월=0(입춘), 3월=1(경칩), ...
-        if (termIndex >= 0 && termIndex <= 10) {
-            if (isBeforeSolarTerm(y, m, d, h || 0, n || 0, termIndex)) {
-                adjM = m - 1;
-                if (adjM <= 0) {
-                    adjM = 12;
-                    adjY = y - 1;
-                }
-            }
+        // 1월: 소한(약 1월 5-6일) 기준
+        // 소한 전 = 전년 자월(11), 소한 후 = 축월(12)
+        const xiaohanDay = 6;  // 대략 1월 6일
+        beforeTerm = d < xiaohanDay || (d === xiaohanDay && (h || 0) < 12);
+    } else {
+        const termIndex = m - 2;  // 2월=0(입춘), 3월=1(경칩), ... 12월=10(대설)
+        beforeTerm = isBeforeSolarTerm(y, m, d, h || 0, n || 0, termIndex);
+    }
+    
+    // 2. 절기월 결정
+    if (m === 1) {
+        if (beforeTerm) {
+            // 소한 전 = 전년 자월(절기월 11)
+            solarMonth = 11;
+        } else {
+            // 소한 후 = 축월(절기월 12)
+            solarMonth = 12;
+        }
+    } else {
+        if (beforeTerm) {
+            // 절기 전 = 전월의 절기월
+            // 양력 2월 입춘 전 = 전년 축월(12)
+            // 양력 3월 경칩 전 = 인월(1)
+            // ...
+            // 양력 12월 대설 전 = 해월(10)
+            solarMonth = (m - 2 - 1 + 12) % 12;
+            if (solarMonth === 0) solarMonth = 12;
+        } else {
+            // 절기 후 = 해당 월의 절기월
+            solarMonth = (m - 2 + 12) % 12;
+            if (solarMonth === 0) solarMonth = 12;
         }
     }
     
-    // 연간지 구하기 (절기 보정된 연도로)
-    const yp = calcYearPillar(adjY, adjM, 15, 12, 0);
-    const ysi = STEM.indexOf(yp.s);
+    // 3. 입춘 기준으로 년간 결정
+    const isBeforeLichun = isBeforeSolarTerm(y, m, d, h || 0, n || 0, 0);  // 0 = 입춘
+    const yearForStem = isBeforeLichun ? y - 1 : y;
     
-    // [v26 FIX] 월간 계산 공식 수정 - Gemini 피드백 반영
-    // 월지: 인(2)=1월, 묘(3)=2월, ... 자(0)=11월, 축(1)=12월
-    const monthBranchIndex = (adjM + 1) % 12;
+    // 4. 년간 구하기
+    const yearIdx = ((yearForStem - 4) % 60 + 60) % 60;
+    const ysi = yearIdx % 10;
     
-    // 인월(1월) 천간 계산: 갑기→병, 을경→무, 병신→경, 정임→임, 무계→갑
-    // 공식: (년간 % 5) * 2 + 2 (mod 10)
+    // 5. 월지 계산: 절기월 → 지지
+    // 절기월 1(인월)=寅(2), 2(묘월)=卯(3), ... 11(자월)=子(0), 12(축월)=丑(1)
+    const monthBranchIndex = (solarMonth + 1) % 12;
+    
+    // 6. 월간 계산
+    // 인월(절기월1) 천간: 갑/기년→병(2), 을/경년→무(4), 병/신년→경(6), 정/임년→임(8), 무/계년→갑(0)
     const inMonthStem = ((ysi % 5) * 2 + 2) % 10;
+    const msi = (inMonthStem + solarMonth - 1) % 10;
     
-    // 월간 = 인월천간 + (월지 - 인월지 + 12) % 12
-    // 인월지 = 2 (寅)
-    const monthOffset = (monthBranchIndex - 2 + 12) % 12;
-    const msi = (inMonthStem + monthOffset) % 10;
-    
-    return { s: STEM[msi], b: BRANCH[monthBranchIndex] };
+    return { s: STEM[msi], b: BRANCH[monthBranchIndex], solarMonth: solarMonth };
 }
 
 function calcDayPillar(y, m, d) {
@@ -1781,16 +1814,29 @@ function calcDayPillar(y, m, d) {
     const adjY = y + 4800 - a;
     const adjM = m + 12 * a - 3;
     const jdn = d + Math.floor((153 * adjM + 2) / 5) + 365 * adjY + Math.floor(adjY / 4) - Math.floor(adjY / 100) + Math.floor(adjY / 400) - 32045;
-    const baseJdn = 2415021;
-    const diff = jdn - baseJdn;
-    return { s: STEM[((diff % 10) + 10) % 10], b: BRANCH[((diff % 12) + 12) % 12] };
+    // [v26 FIX] 검증된 기준점 - 위키백과 일진 데이터 기반 (2024/1/1 = 甲子)
+    const baseJdn = 2460311;
+    const idx60 = ((jdn - baseJdn) % 60 + 60) % 60;
+    return { s: STEM[idx60 % 10], b: BRANCH[idx60 % 12] };
 }
 
 function calcHourPillar(dayStem, h) {
-    if (h < 0) return null;
-    const hbi = h;
+    // [v27 FIX] 시주 계산 수정
+    // h = 시지 인덱스 (0=子, 1=丑, ... 11=亥)
+    if (h < 0 || h > 11) return null;
+    
+    const hbi = h;  // 시지 인덱스
     const dsi = STEM.indexOf(dayStem);
-    const hsi = (dsi * 2 + hbi) % 10;
+    
+    // 시간 계산: 일간에 따른 자시 천간
+    // 갑/기일(0,5) → 갑자시 (0)
+    // 을/경일(1,6) → 병자시 (2)
+    // 병/신일(2,7) → 무자시 (4)
+    // 정/임일(3,8) → 경자시 (6)
+    // 무/계일(4,9) → 임자시 (8)
+    const ziHourStem = ((dsi % 5) * 2) % 10;
+    const hsi = (ziHourStem + hbi) % 10;
+    
     return { s: STEM[hsi], b: BRANCH[hbi] };
 }
 
@@ -3850,12 +3896,23 @@ function calcInteractions(saju) {
     }
     
     // 충
-    const clash = [[0,6,'자오충','남북 충돌! 마음과 현실이 갈등해요.'],[1,7,'축미충','재물 관련 변동이 있어요.'],[2,8,'인신충','활동량 많아지고 바빠져요. 교통사고 주의!'],[3,9,'묘유충','문서, 계약 문제 생길 수 있어요.'],[4,10,'진술충','고집 때문에 충돌해요.'],[5,11,'사해충','계획대로 안 될 수 있어요.']];
+    // [v26 FIX] 왕지 충돌(자오충, 묘유충)은 무조건 강한 충으로 표시
+    const wangjiChung = [[0,6,'자오충'],[3,9,'묘유충']]; // 왕지끼리의 충
+    const clash = [
+        [0,6,'자오충','수화상전(水火相戰)! 심혈관/신장 건강과 정신적 갈등에 주의하세요.'],
+        [1,7,'축미충','재물 관련 변동이 있어요. 부동산이나 계약 조심!'],
+        [2,8,'인신충','활동량 많아지고 바빠져요. 교통사고, 수술 주의!'],
+        [3,9,'묘유충','문서, 계약 문제 생길 수 있어요. 간/폐 건강 주의!'],
+        [4,10,'진술충','고집 때문에 충돌해요. 소송, 관재 주의!'],
+        [5,11,'사해충','계획대로 안 될 수 있어요. 심혈관/비뇨기 건강 주의!']
+    ];
     for (let [a,b,n,desc] of clash) {
         const ia = brs.indexOf(a), ib = brs.indexOf(b);
         if (ia >= 0 && ib >= 0) {
             const dist = Math.abs(ia - ib);
-            const strength = dist === 1 ? '⚡강한 충' : dist === 2 ? '보통 충' : '약한 충';
+            // 왕지 충돌은 무조건 강한 충
+            const isWangji = wangjiChung.some(([wa, wb]) => (a === wa && b === wb) || (a === wb && b === wa));
+            const strength = isWangji ? '⚡왕지 충돌' : dist === 1 ? '⚡강한 충' : dist === 2 ? '보통 충' : '약한 충';
             res.push({t:'沖',c:`${BRANCH[a].c}↔${BRANCH[b].c}`,m:`${n} (${strength})`,d:desc});
         }
     }
@@ -6567,6 +6624,21 @@ ${monthText}
     - 갑인(甲寅), 을사(乙巳), 무오(戊午), 신해(辛亥), 임자(壬子), 정미(丁未) 등 고란살 일주는 외로움이 있습니다.
     - 특히 신강한 사주의 고란살은 본인의 주장이 너무 강해 배우자와 충돌하기 쉽습니다.
     - "주말 부부나 각방을 쓰는 등 적당한 거리두기"가 개운법임을 조언해 주세요.
+
+26. 화염조토(火炎燥土)와 건강 경고:
+    - 지지에 사(巳), 오(午)가 3개 이상이면 "불바다 사주"입니다.
+    - 이런 사주에 병오(丙午)년처럼 화(火) 운이 오면 "심혈관 질환, 뇌출혈, 안구 질환"의 위험이 극도로 높아집니다.
+    - 건강검진을 강력히 권고하고, 시원한 환경(북쪽 방향, 수영, 생수)을 찾도록 조언하세요.
+
+27. 군겁쟁재(群劫爭財)와 부친/처의 안위:
+    - 비겁(나/친구/형제)이 너무 강해 재성(돈/아버지/아내)을 극하는 형국입니다.
+    - "돈 욕심을 부리면 건강과 가족을 잃을 수 있음"을 경고하세요.
+    - 재물은 반드시 "부동산이나 저축성 보험" 등 묶어두는 형태로 관리하라고 조언하세요.
+
+28. 대운 vs 세운의 왕지 충돌 (특히 자오충):
+    - 대운 지지와 세운 지지가 왕지끼리 충돌하면 "인생의 큰 전환점 또는 위기"입니다.
+    - 예: 대운 자(子) + 세운 오(午) = 자오충 → 수화상전(水火相戰)
+    - 단순한 길흉을 넘어 "안전 제일주의", "무리한 투자/확장 금지", "건강검진 필수"를 당부하세요.
 
 [분석 요청사항]
 위 사주팔자 정보를 바탕으로 다음을 각각 상세히 서술형으로 해석해 주세요:
