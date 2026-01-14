@@ -2,9 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<!-- 🔒 K-MUDANG Pro v26 - 표준 명리학 기준 완전 검증 -->
-<!-- 일주: 위키백과 일진 데이터 100% 검증 -->
-<!-- 해석: 자평진전 기준 적용, Gemini 피드백 반영 -->
+<!-- 🔒 K-MUDANG Pro v26 - 복사버튼 버그 수정 -->
 <script>
 (function(){
     document.addEventListener('contextmenu',function(e){e.preventDefault();return false;});
@@ -3115,8 +3113,9 @@ function checkSpecialFormat(saju, strength) {
     });
     
     // [v26 FIX] Gemini 피드백: 식상이 강하면(투출+통근) 종격이 될 수 없음
+    const ybi = saju.year ? BRANCH.findIndex(b => b.c === saju.year.b.c) : -1;
     const hasSikSangWithRoot = saju.year && ['상관','식신'].includes(getTenGod(saju.year.s, saju.day.s)?.k) &&
-        (BRANCH.indexOf(saju.year.b) === 5 || BRANCH.indexOf(saju.year.b) === 6); // 사, 오 (화의 왕지)
+        (ybi === 5 || ybi === 6); // 사, 오 (화의 왕지)
     
     if (strength.extreme === '극신강' && !hasSikSangWithRoot) {
         // 종왕격: 비겁이 매우 많음
@@ -6211,8 +6210,9 @@ function copySajuForAI() {
         
         // [v26 FIX] 식상이 투출+통근하면 종격 불가 (Gemini 피드백)
         const yearGodObj = getTenGod(SAJU.year.s, dm);
+        const yearBranchIdx = BRANCH.findIndex(b => b.c === SAJU.year.b.c);
         const hasSikSangWithRoot = yearGodObj && ['상관','식신'].includes(yearGodObj.k) && 
-            [5, 6].includes(BRANCH.indexOf(SAJU.year.b)); // 사(5), 오(6)
+            [5, 6].includes(yearBranchIdx); // 사(5), 오(6)
         const canBeJonggeok = str.extreme && !hasSikSangWithRoot;
         
         // 오행 분포 계산
