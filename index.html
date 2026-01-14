@@ -3115,7 +3115,7 @@ function checkSpecialFormat(saju, strength) {
     });
     
     // [v26 FIX] Gemini 피드백: 식상이 강하면(투출+통근) 종격이 될 수 없음
-    const hasSikSangWithRoot = saju.year && ['상관','식신'].includes(getGod(saju.day.s, saju.year.s)?.k) &&
+    const hasSikSangWithRoot = saju.year && ['상관','식신'].includes(getTenGod(saju.year.s, saju.day.s)?.k) &&
         (BRANCH.indexOf(saju.year.b) === 5 || BRANCH.indexOf(saju.year.b) === 6); // 사, 오 (화의 왕지)
     
     if (strength.extreme === '극신강' && !hasSikSangWithRoot) {
@@ -6210,7 +6210,7 @@ function copySajuForAI() {
         const ilju = getIljuDesc(SAJU.day.s, SAJU.day.b);
         
         // [v26 FIX] 식상이 투출+통근하면 종격 불가 (Gemini 피드백)
-        const yearGodObj = getGod(dm, SAJU.year.s);
+        const yearGodObj = getTenGod(SAJU.year.s, dm);
         const hasSikSangWithRoot = yearGodObj && ['상관','식신'].includes(yearGodObj.k) && 
             [5, 6].includes(BRANCH.indexOf(SAJU.year.b)); // 사(5), 오(6)
         const canBeJonggeok = str.extreme && !hasSikSangWithRoot;
