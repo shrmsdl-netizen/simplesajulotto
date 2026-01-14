@@ -2,28 +2,24 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>🍀 사주로또 Pro - 운명의 번호</title>
-<meta name="description" content="사주팔자 기반 로또 번호 생성. 역대 당첨번호 100% 제외. 전문 사주 분석.">
-
 <!-- 🔒 Copy Protection v25 -->
 <script>
 (function(){
-    // 우클릭 방지
     document.addEventListener('contextmenu',function(e){e.preventDefault();return false;});
-    // 키보드 단축키 방지 (F12, Ctrl+U, Ctrl+S, Ctrl+Shift+I/J/C)
     document.addEventListener('keydown',function(e){
         if(e.key==='F12'||(e.ctrlKey&&e.key==='u')||(e.ctrlKey&&e.key==='s')||
            (e.ctrlKey&&e.shiftKey&&['i','j','c'].includes(e.key.toLowerCase()))){
             e.preventDefault();return false;
         }
     });
-    // 텍스트 선택 방지
     document.addEventListener('selectstart',function(e){if(e.target.tagName!=='INPUT'&&e.target.tagName!=='TEXTAREA')e.preventDefault();});
-    // 드래그 방지
     document.addEventListener('dragstart',function(e){e.preventDefault();});
 })();
 </script>
+
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>🍀 사주로또 Pro - 운명의 번호</title>
+<meta name="description" content="사주팔자 기반 로또 번호 생성. 역대 당첨번호 100% 제외. 전문 사주 분석.">
 
 <!-- Open Graph / 카카오톡 공유 썸네일 -->
 <meta property="og:type" content="website">
@@ -1683,23 +1679,93 @@ function adjustTime(y, m, d, h) {
 /* ========================================
    8. 사주 계산
    ======================================== */
-function calcYearPillar(y, m, d) {
+
+// [v25 NEW] 절기 시각 조회 함수 - SOLAR_TERMS 데이터 활용
+function getSolarTermTime(year, termIndex) {
+    // SOLAR_TERMS에서 해당 연도의 절기 데이터 가져오기
+    // termIndex: 0=입춘, 1=경칩, 2=청명, 3=입하, 4=망종, 5=소서, 6=입추, 7=백로, 8=한로, 9=입동, 10=대설
+    
+    // 연도 키 찾기 (정확한 연도가 없으면 가장 가까운 10년 단위 사용)
+    let termData = SOLAR_TERMS[year];
+    if (!termData) {
+        // 가장 가까운 연도 찾기
+        const years = Object.keys(SOLAR_TERMS).map(Number).sort((a, b) => a - b);
+        let closest = years[0];
+        for (const y of years) {
+            if (y <= year) closest = y;
+            else break;
+        }
+        termData = SOLAR_TERMS[closest];
+    }
+    
+    if (!termData || termIndex < 0 || termIndex >= termData.length) {
+        // 기본값 반환 (절기 데이터 없을 경우)
+        const defaultDays = [4, 6, 5, 6, 6, 7, 8, 8, 8, 8, 7];
+        return { m: termIndex + 2, d: defaultDays[termIndex] || 5, h: 0, n: 0 };
+    }
+    
+    return termData[termIndex];
+}
+
+// [v25 NEW] 특정 시점이 절기 이전인지 확인
+function isBeforeSolarTerm(year, month, day, hour, minute, termIndex) {
+    const term = getSolarTermTime(year, termIndex);
+    const currentTime = new Date(year, month - 1, day, hour || 0, minute || 0);
+    const termTime = new Date(year, term.m - 1, term.d, term.h, term.n);
+    return currentTime < termTime;
+}
+
+function calcYearPillar(y, m, d, h, n) {
     let adjY = y;
-    if (m < 2 || (m === 2 && d < 4)) adjY--;
+    
+    // [v25 FIX] 입춘(절기 인덱스 0) 시각을 정확히 체크
+    // 입춘 전이면 전년도로 계산
+    if (isBeforeSolarTerm(y, m, d, h || 0, n || 0, 0)) {
+        adjY--;
+    }
+    
     const si = (adjY - 4) % 10;
     const bi = (adjY - 4) % 12;
     return { s: STEM[si < 0 ? si + 10 : si], b: BRANCH[bi < 0 ? bi + 12 : bi] };
 }
 
-function calcMonthPillar(y, m, d) {
+function calcMonthPillar(y, m, d, h, n) {
+    // [v25 FIX] 정확한 절기 시각으로 월주 계산
+    // 각 월의 절기: 2월=입춘, 3월=경칩, 4월=청명, 5월=입하, 6월=망종, 
+    //              7월=소서, 8월=입추, 9월=백로, 10월=한로, 11월=입동, 12월=대설, 1월=소한(전년 12월)
+    
     let adjM = m;
-    if (d < 5) adjM--;
-    if (adjM <= 0) { adjM = 12; y--; }
-    const yp = calcYearPillar(y, m, d);
+    let adjY = y;
+    
+    // 1월인 경우 전년도 12월(대설 절기) 기준
+    if (m === 1) {
+        // 1월의 절기(소한)는 별도 처리 필요 - 여기서는 간략화
+        adjM = 12;
+        adjY = y - 1;
+    } else if (m >= 2 && m <= 12) {
+        // 해당 월의 절기 이전이면 전월로 계산
+        const termIndex = m - 2; // 2월=0(입춘), 3월=1(경칩), ...
+        if (termIndex >= 0 && termIndex <= 10) {
+            if (isBeforeSolarTerm(y, m, d, h || 0, n || 0, termIndex)) {
+                adjM = m - 1;
+                if (adjM <= 0) {
+                    adjM = 12;
+                    adjY = y - 1;
+                }
+            }
+        }
+    }
+    
+    // 연간지 구하기 (절기 보정된 연도로)
+    const yp = calcYearPillar(adjY, adjM, 15, 12, 0);
     const ysi = STEM.indexOf(yp.s);
-    const msi = ((ysi % 5) * 2 + adjM + 1) % 10;
-    const mbi = (adjM + 1) % 12;
-    return { s: STEM[msi], b: BRANCH[mbi] };
+    
+    // 월간 계산: (연간 % 5) * 2 + 월지인덱스 + 1
+    // 월지: 인(2)=1월, 묘(3)=2월, ... 축(1)=12월
+    const monthBranchIndex = (adjM + 1) % 12; // 1월→인(2), 2월→묘(3), ...
+    const msi = ((ysi % 5) * 2 + monthBranchIndex + 1) % 10;
+    
+    return { s: STEM[msi], b: BRANCH[monthBranchIndex] };
 }
 
 function calcDayPillar(y, m, d) {
@@ -1880,12 +1946,22 @@ function getTenGod(stem, dayStem) {
 }
 
 function getTwelveState(dayStem, branch) {
+    // 각 일간별 장생 지지 인덱스
+    // 甲(亥), 乙(午), 丙(寅), 丁(酉), 戊(寅), 己(酉), 庚(巳), 辛(子), 壬(申), 癸(卯)
     const starts = [11, 6, 2, 9, 2, 9, 5, 0, 8, 3];
     const dsi = STEM.indexOf(dayStem);
     const bi = BRANCH.indexOf(branch);
     const start = starts[dsi];
-    const dir = dayStem.y ? 1 : -1;
-    return TWELVE_STATES[(start + dir * bi + 120) % 12];
+    const isYang = dayStem.y; // 양간이면 true
+    
+    // [v25 FIX] Gemini 피드백 반영 - 12운성 계산 공식 수정
+    // 양간(甲丙戊庚壬): 장생지에서 순행 (지지 - 장생지)
+    // 음간(乙丁己辛癸): 장생지에서 역행 (장생지 - 지지)
+    const stateIdx = isYang ? 
+        (bi - start + 12) % 12 : 
+        (start - bi + 12) % 12;
+    
+    return TWELVE_STATES[stateIdx];
 }
 
 /* ========================================
@@ -2311,6 +2387,43 @@ function calcStrength(saju) {
     let inCount = 0;
     [...allSt, ...allBr].forEach(p => { if (p.e === inEl) inCount++; });
     if (inCount >= 2) { score += 1.5; factors.push({ l: '인성생부', v: `${inCount}개 (신강↑)`, p: true }); }
+    
+    // [v25 NEW] 9. 삼합국 완성 시 오행 점수 대폭 가산
+    const brs = allBr.map(b => BRANCH.indexOf(b));
+    const samhapSets = [
+        {branches: [2,6,10], result: 'fire', name: '인오술 화국'},
+        {branches: [5,9,1], result: 'metal', name: '사유축 금국'},
+        {branches: [8,0,4], result: 'water', name: '신자진 수국'},
+        {branches: [11,3,7], result: 'wood', name: '해묘미 목국'}
+    ];
+    
+    for (const sh of samhapSets) {
+        const hasCount = sh.branches.filter(b => brs.includes(b)).length;
+        const hasCenter = brs.includes(sh.branches[1]); // 왕지(중심) 존재 여부
+        
+        if (hasCount >= 2 && hasCenter) {
+            // 삼합 결과 오행이 일간을 돕는 오행인지 체크
+            if (myEls.includes(sh.result)) {
+                const bonus = hasCount === 3 ? 5 : 3; // 완성 5점, 반합 3점
+                score += bonus;
+                factors.push({ l: '삼합생조', v: `${sh.name} (+${bonus})`, p: true });
+            } else if (gwans.includes(sh.result)) {
+                // 삼합 결과가 관살이면 감점
+                const penalty = hasCount === 3 ? 4 : 2;
+                score -= penalty;
+                factors.push({ l: '삼합극신', v: `${sh.name} (${-penalty})`, p: false });
+            }
+        }
+    }
+    
+    // [v25 NEW] 10. 왕지 충돌 감점 (자오충, 묘유충)
+    const wangjiClash = [[0,6,'자오충'],[3,9,'묘유충']];
+    for (const [a, b, name] of wangjiClash) {
+        if (brs.includes(a) && brs.includes(b)) {
+            score -= 2;
+            factors.push({ l: '왕지충', v: `${name} (-2)`, p: false });
+        }
+    }
     
     // 극신강/극신약 판정
     let type = 'balanced';
@@ -6311,6 +6424,15 @@ ${monthText}
 
 ===== AI 해석 요청 =====
 
+[🔥 핵심 7대 지침 (빠른 참조)]
+① 삼합국 완성 시 지지 오행 변화 → 격국/용신에 반드시 반영
+② 배우자성이 지장간에만 있으면 '암장(暗藏)'으로 해석
+③ 왕지 충돌(자오충/묘유충)은 '격동의 해'로 강력 경고
+④ 신약인데 비견격이면 '예민함/강박', 신강인데 편관격이면 '리더십'
+⑤ 2026년 병오(丙午)년은 火 기운 강력 → 조후/억부 고려해 조언
+⑥ 탕화살(축오/인사) + 세운 중첩 = '멘탈 붕괴/화병' 특별 주의
+⑦ 수다화식(水多火熄) 사주는 조후보다 억부(불을 살리는 것) 우선
+
 [페르소나 설정]
 당신은 30년 경력의 현대적이고 세련된 명리학자입니다. 
 - 전문 용어(비견, 편재, 식신, 건록, 관대 등)를 사용하되, 반드시 그 뒤에 초등학생도 이해할 수 있는 쉬운 비유를 섞어 설명해주세요. 예: "비견(比肩)은 나와 같은 에너지를 가진 형제자매 같은 존재예요."
@@ -6401,6 +6523,27 @@ ${monthText}
     - 원국에 축오가 있고 세운에서 오(午)가 오는 해는 기존의 인간관계나 정신적 스트레스가 폭발하거나 재조정되는 시기입니다.
     - 긍정적으로는 '오래된 문제를 수술하듯 도려내는 해', 부정적으로는 '감정적 폭발'로 해석해 주세요.
     - 용신이 火인 사주에게 병오(丙午)년이 오면 "대발복의 기회이나 감정 조절 필수"로 톤을 높여야 합니다.
+
+19. 용신 파괴 (묘유충/인신충 등) 경고:
+    - 용신이 위치한 지지가 충(沖)을 받으면 "용신 파괴"로 매우 위중하게 해석하세요.
+    - 예: 시지 卯(용신)가 월지 酉와 충돌 → "생명줄이 끊어질 듯 위태롭다"
+    - 건강(간, 뼈, 신경)과 말년의 고독함을 대비하도록 조언해 주세요.
+    - 단순히 "보통 충"이라고 넘어가지 마세요.
+
+20. 일주와 세운의 천동지충 (특히 2026년):
+    - 일주 지지와 세운 지지가 충돌하면 "전충(戰沖)"으로 매우 강력합니다.
+    - 예: 일주 병자(丙子) + 세운 병오(丙午) = 자오충 → 배우자궁과 건강(심혈관 vs 신장)에 격변
+    - 단순한 '변화'가 아니라 '충돌과 깨짐'으로 강력하게 경고해 주세요.
+
+21. 투합(妬合/쟁합) 현상 해석:
+    - 일간이 양쪽의 같은 십신(예: 辛+辛 정재 2개)과 합을 하면 투합/쟁합입니다.
+    - "돈과 이성 문제로 인한 우유부단함" 또는 "두 가지 일 사이에서의 갈등"을 암시합니다.
+    - 단순히 "재물운이 좋다"고만 하지 말고, "선택과 집중을 못 하면 모두 잃을 수 있음"을 강조하세요.
+
+22. 수다화식(水多火熄) - 물이 불을 끄는 상황:
+    - 여름생(오/사월)이라도 주변에 물(壬, 癸, 亥, 子)이 너무 많으면 불이 꺼지는 형국입니다.
+    - 이 경우 조후론(여름생=물 필요)을 따르지 말고, 억부론(약한 불을 살려야 함)을 따라 火/土를 용신으로 보세요.
+    - 자오충(子午沖)이 있으면 월지(나의 근본)가 공격받아 더욱 위태롭습니다.
 
 [분석 요청사항]
 위 사주팔자 정보를 바탕으로 다음을 각각 상세히 서술형으로 해석해 주세요:
@@ -7192,6 +7335,12 @@ function copyMatchForAI() {
     
     text += `
 ===== AI 해석 요청 =====
+
+[🔥 핵심 해석 지침]
+① 일지 충돌(자오충/묘유충 등)은 '부부 갈등 잦음' 경고
+② 삼합 관계 있으면 '천생연분급' 강조
+③ 용신이 서로 맞으면 '만나면 운이 좋아지는 관계'
+④ 암합 있으면 '숨겨진 인연, 비밀스러운 끌림'
 
 [페르소나 설정]
 당신은 30년 경력의 현대적이고 세련된 명리학자입니다.
