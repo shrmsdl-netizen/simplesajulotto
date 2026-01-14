@@ -691,22 +691,6 @@ footer.tab-footer.active { display: block; }
             return false;
         }
     });
-    
-    // 개발자 도구 감지 (콘솔 열림 감지)
-    (function() {
-        const threshold = 160;
-        const check = function() {
-            if (window.outerWidth - window.innerWidth > threshold || 
-                window.outerHeight - window.innerHeight > threshold) {
-                document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#1a1a2e;color:#fdd835;font-size:24px;text-align:center;padding:20px;">🔒 개발자 도구 사용이 감지되었습니다<br><br>이 페이지는 보호되어 있습니다</div>';
-            }
-        };
-        setInterval(check, 1000);
-    })();
-    
-    // 콘솔 경고 메시지
-    console.log('%c⚠️ 경고!', 'color: red; font-size: 50px; font-weight: bold;');
-    console.log('%c이 코드는 저작권으로 보호됩니다. 무단 복제 시 법적 책임을 질 수 있습니다.', 'color: red; font-size: 16px;');
 })();
 </script>
 </head>
@@ -2744,16 +2728,73 @@ function analyzeYukcheon(saju, gender) {
     
     // ========== 배우자 분석 ==========
     const spouseGod = g === 'm' ? '정재' : '정관';
-    const spouseCount = result.counts[spouseGod] || 0;
+    const spouseGod2 = g === 'm' ? '편재' : '편관'; // 편재/편관도 포함
+    const spouseCount = (result.counts[spouseGod] || 0) + (result.counts[spouseGod2] || 0);
     const dayBranchState = getTwelveState(dm, saju.day.b);
     
+    // 지장간에 재성/관성이 있는지 체크
+    let hasHiddenSpouse = false;
+    const branches = [saju.year.b, saju.month.b, saju.day.b];
+    if (saju.hour) branches.push(saju.hour.b);
+    
+    branches.forEach(br => {
+        const bi = BRANCH.indexOf(br);
+        const jj = JIJANGGAN[bi];
+        if (jj) {
+            jj.forEach(j => {
+                const jjGod = getTenGod(STEM[j.stem], dm);
+                if (jjGod && (jjGod.k === spouseGod || jjGod.k === spouseGod2)) {
+                    hasHiddenSpouse = true;
+                }
+            });
+        }
+    });
+    
     let spouseAnalysis = '';
-    if (spouseCount === 0) {
+    
+    // ★ 배우자궁(일지) 충극 체크
+    const dbi = BRANCH.indexOf(saju.day.b);
+    const ybi = BRANCH.indexOf(saju.year.b);
+    const mbi = BRANCH.indexOf(saju.month.b);
+    const hbi = saju.hour ? BRANCH.indexOf(saju.hour.b) : -1;
+    const otherBranches = [ybi, mbi];
+    if (hbi >= 0) otherBranches.push(hbi);
+    
+    // 충 체크 (자오, 축미, 인신, 묘유, 진술, 사해)
+    const chungPairs = [[0,6],[1,7],[2,8],[3,9],[4,10],[5,11]];
+    let spouseClash = false;
+    let spouseClashType = '';
+    chungPairs.forEach(([a,b]) => {
+        if ((dbi === a && otherBranches.includes(b)) || (dbi === b && otherBranches.includes(a))) {
+            spouseClash = true;
+            spouseClashType = '충(沖)';
+        }
+    });
+    
+    // 형 체크 (묘신원진 등)
+    const harmPairs = [[3,8],[1,6],[3,4]]; // 묘신, 축오, 묘진 등
+    harmPairs.forEach(([a,b]) => {
+        if ((dbi === a && otherBranches.includes(b)) || (dbi === b && otherBranches.includes(a))) {
+            if (!spouseClash) {
+                spouseClash = true;
+                spouseClashType = '원진/해(害)';
+            }
+        }
+    });
+    
+    if (spouseCount === 0 && !hasHiddenSpouse) {
         spouseAnalysis = '배우자성이 없어요. 결혼이 늦거나 인연이 약할 수 있어요. 대운에서 들어오면 인연이 생겨요.';
+    } else if (spouseCount === 0 && hasHiddenSpouse) {
+        spouseAnalysis = '천간에 배우자성이 없지만 지장간에 숨어 있어요. 겉으로 드러나지 않는 실속형 배우자를 만나거나, 소개팅보다는 자연스러운 만남에서 인연이 생겨요.';
     } else if (spouseCount >= 2) {
         spouseAnalysis = '배우자성이 많아요. 이성 인기 많지만 바람기 조심! 한 사람에게 집중하세요.';
     } else {
         spouseAnalysis = '배우자성이 적절해요. 좋은 인연을 만날 수 있어요.';
+    }
+    
+    // 배우자궁 충극 시 경고 추가
+    if (spouseClash) {
+        spouseAnalysis += ` ⚠️ 단, 배우자궁(일지)이 ${spouseClashType}을 받아 부부 갈등이 있을 수 있어요. 서로 거리를 두거나 각자 바쁜 생활이 오히려 좋아요.`;
     }
     
     result.spouse = {
@@ -3411,9 +3452,28 @@ function calcSinsal(saju) {
     const yangren = {0:3,1:2,2:6,3:5,4:6,5:5,6:9,7:8,8:0,9:11};
     if (dbi === yangren[dmi]) ss.push({n:'양인살(羊刃殺)',t:'bad',d:'칼날 같은 기운! 결단력 있지만 날카로워요. 군인, 외과의, 법조인에 적합.',i:'🗡️',lv:'상'});
     
-    // 18. 백호살 (白虎殺)
+    // 18. 백호살 (白虎殺) - 월지 기준
     const baihu = [6,7,8,9,10,11,0,1,2,3,4,5]; // 월별
     if (mbi < 12 && brs.includes(baihu[mbi])) ss.push({n:'백호살(白虎殺)',t:'bad',d:'사고, 수술 주의! 하지만 의료인, 요리사 등 피 보는 직업은 오히려 좋아요.',i:'🐯',lv:'중'});
+    
+    // 18-1. 백호대살 (白虎大殺) - 일주 기준 ★중요★
+    // 갑진, 을미, 병술, 정축, 무진, 기축, 경술, 신미, 임진, 계축
+    const baihuDaeSal = [
+        [0, 4],  // 갑진
+        [1, 7],  // 을미 ← 주의!
+        [2, 10], // 병술
+        [3, 1],  // 정축
+        [4, 4],  // 무진
+        [5, 1],  // 기축
+        [6, 10], // 경술
+        [7, 7],  // 신미
+        [8, 4],  // 임진
+        [9, 1]   // 계축
+    ];
+    const isBaihuDaeSal = baihuDaeSal.some(([s, b]) => s === dmi && b === dbi);
+    if (isBaihuDaeSal) {
+        ss.push({n:'백호대살(白虎大殺)',t:'bad',d:'일주에 백호가 있어요! 겉으로는 온순해 보여도 속에 강한 기운이 있습니다. 배우자궁에 백호가 있으니 배우자의 기가 세거나, 건강 문제가 있을 수 있어요. 의료, 군경, 요리 등 피를 다루는 직업이 오히려 좋아요.',i:'🐅',lv:'상'});
+    }
     
     // 19. 겁살 (劫殺)
     const jiesha = {0:5,1:2,2:11,3:8,4:5,5:2,6:11,7:8,8:5,9:2,10:11,11:8};
@@ -3448,8 +3508,25 @@ function calcSinsal(saju) {
     const guluanCheck = GENDER === 'm' ? guluanM : guluanF;
     if (guluanCheck[dmi] && guluanCheck[dmi][1] === dbi) ss.push({n:'고란살(孤鸞殺)',t:'bad',d:'외로운 기운이 있어요. 결혼이 늦거나 독신 경향. 혼자 있는 시간이 많아요.',i:'🦢',lv:'하'});
     
-    // 27. 삼재 (三災) - 년지 기준
-    const sanzai = {0:[2,3,4],1:[2,3,4],2:[2,3,4],3:[5,6,7],4:[5,6,7],5:[5,6,7],6:[8,9,10],7:[8,9,10],8:[8,9,10],9:[11,0,1],10:[11,0,1],11:[11,0,1]};
+    // 27. 삼재 (三災) - 년지 기준 (정확한 삼합 기반)
+    // 신자진(8,0,4) 삼국 → 인묘진(2,3,4)년 삼재
+    // 해묘미(11,3,7) 삼국 → 사오미(5,6,7)년 삼재
+    // 인오술(2,6,10) 삼국 → 신유술(8,9,10)년 삼재
+    // 사유축(5,9,1) 삼국 → 해자축(11,0,1)년 삼재
+    const sanzai = {
+        0:[2,3,4],   // 자(쥐) - 신자진 삼국 → 인묘진년 삼재
+        1:[11,0,1],  // 축(소) - 사유축 삼국 → 해자축년 삼재
+        2:[8,9,10],  // 인(호랑이) - 인오술 삼국 → 신유술년 삼재
+        3:[5,6,7],   // 묘(토끼) - 해묘미 삼국 → 사오미년 삼재
+        4:[2,3,4],   // 진(용) - 신자진 삼국 → 인묘진년 삼재
+        5:[11,0,1],  // 사(뱀) - 사유축 삼국 → 해자축년 삼재
+        6:[8,9,10],  // 오(말) - 인오술 삼국 → 신유술년 삼재
+        7:[5,6,7],   // 미(양) - 해묘미 삼국 → 사오미년 삼재
+        8:[2,3,4],   // 신(원숭이) - 신자진 삼국 → 인묘진년 삼재
+        9:[11,0,1],  // 유(닭) - 사유축 삼국 → 해자축년 삼재
+        10:[8,9,10], // 술(개) - 인오술 삼국 → 신유술년 삼재
+        11:[5,6,7]   // 해(돼지) - 해묘미 삼국 → 사오미년 삼재
+    };
     const curYear = new Date().getFullYear();
     const curYearBranch = (curYear - 4) % 12;
     if (sanzai[ybi] && sanzai[ybi].includes(curYearBranch)) ss.push({n:'삼재(三災) 기간',t:'bad',d:'현재 삼재 기간이에요! 3년간 조심하세요. 무리한 확장, 이사, 수술 피하세요.',i:'🔥',lv:'중'});
@@ -3465,6 +3542,53 @@ function calcSinsal(saju) {
     // 30. 천사(天赦) - 하늘이 용서하는 날
     const tiansha = [[2,0],[3,1],[5,2],[6,3],[8,4],[9,5],[11,6],[0,7],[2,8],[3,9]]; // [지지,천간] 조합
     if (tiansha.some(ts => dbi === ts[0] && dmi === ts[1])) ss.push({n:'천사일(天赦日) 출생',t:'good',d:'하늘이 용서하는 날에 태어났어요! 죄를 지어도 풀리고, 흉이 길로 바뀌어요.',i:'🕊️',lv:'상'});
+    
+    // 31. 탕화살 (湯火殺) - 화상, 약물, 화병 주의
+    // 축오(1,6), 인사(2,5) 조합
+    const tanghuaPairs = [[1,6],[6,1],[2,5],[5,2]]; // [지지1, 지지2] 조합
+    for (let i = 0; i < brs.length; i++) {
+        for (let j = i + 1; j < brs.length; j++) {
+            if (tanghuaPairs.some(p => (brs[i] === p[0] && brs[j] === p[1]))) {
+                ss.push({n:'탕화살(湯火殺)',t:'bad',d:'화상, 열병, 약물 부작용 주의! 화병이나 정신적 스트레스에도 취약해요. 뜨거운 음식, 화기를 다룰 때 조심하세요.',i:'🔥',lv:'상'});
+                break;
+            }
+        }
+    }
+    
+    // 32. 정편재 혼잡 (正偏財混雜) - 이성 문제 경고
+    const stemIdxs = [STEM.indexOf(saju.year.s), STEM.indexOf(saju.month.s), STEM.indexOf(saju.day.s)];
+    if (saju.hour) stemIdxs.push(STEM.indexOf(saju.hour.s));
+    const stemGods = stemIdxs.map(s => getTenGod(STEM[s], saju.day.s));
+    const hasJungJae = stemGods.some(g => g && g.k === '정재');
+    const hasPyunJae = stemGods.some(g => g && g.k === '편재');
+    if (hasJungJae && hasPyunJae) {
+        ss.push({n:'정편재 혼잡(財混)',t:'bad',d:'정재와 편재가 모두 천간에 있어요. 이성 관계가 복잡해지기 쉬워요. 재물의 입출도 빈번합니다. 한 우물을 파는 게 좋아요.',i:'💔',lv:'중'});
+    }
+    
+    // 33. 상관합살 (傷官合殺) - 위기를 기회로 바꾸는 능력
+    // 상관과 편관이 천간합을 이루면
+    const hasShangGuan = stemGods.some(g => g && g.k === '상관');
+    const hasPyunGwan = stemGods.some(g => g && g.k === '편관');
+    const tianganHap = [[0,5],[1,6],[2,7],[3,8],[4,9]]; // 천간합 조합
+    let hasShangGuanHapSal = false;
+    for (let i = 0; i < stemIdxs.length; i++) {
+        for (let j = i+1; j < stemIdxs.length; j++) {
+            const godI = stemGods[i];
+            const godJ = stemGods[j];
+            if (godI && godJ) {
+                const isHap = tianganHap.some(([a,b]) => 
+                    (stemIdxs[i] === a && stemIdxs[j] === b) || (stemIdxs[i] === b && stemIdxs[j] === a)
+                );
+                if (isHap && 
+                    ((godI.k === '상관' && godJ.k === '편관') || (godI.k === '편관' && godJ.k === '상관'))) {
+                    hasShangGuanHapSal = true;
+                }
+            }
+        }
+    }
+    if (hasShangGuanHapSal) {
+        ss.push({n:'상관합살(傷官合殺)',t:'good',d:'위기를 기회로 바꾸는 협상가 재능! 상관(언변/기술)이 편관(위험/적)을 합으로 제어해요. 로비스트, 협상가, 중재자, 해결사에 탁월해요.',i:'🤝',lv:'상'});
+    }
     
     return ss.length ? ss : [{n:'특이신살 없음',t:'neutral',d:'특별한 신살이 없어요. 평온하고 안정적인 사주예요!',i:'☯️',lv:'중'}];
 }
@@ -3608,8 +3732,40 @@ function calcInteractions(saju) {
    14. 공망
    ======================================== */
 function calcGongmang(saju) {
-    const dsi = STEM.indexOf(saju.day.s);
-    const gm = [(10 - dsi + 10) % 12, (11 - dsi + 11) % 12];
+    // 일주의 60갑자 인덱스 계산
+    const stemIdx = STEM.indexOf(saju.day.s);
+    const branchIdx = BRANCH.indexOf(saju.day.b);
+    
+    // 60갑자 인덱스 = (천간인덱스 * 12 + 지지인덱스) 방식이 아니라
+    // 천간과 지지의 음양이 맞아야 함. 올바른 공식:
+    // 60갑자 순서: 갑자(0), 을축(1), 병인(2)... 
+    // 인덱스 = (천간인덱스 - 지지인덱스 + 12) % 12 가 0이면 같은 음양
+    // 실제 60갑자 인덱스 계산: stemIdx * 6 + (branchIdx가 stemIdx와 같은 음양일 때의 순서)
+    
+    // 더 간단한 방법: 일주가 속한 순(旬) 찾기
+    // 각 순은 갑(甲)으로 시작하므로, 일간에서 갑까지의 거리를 구하고
+    // 그만큼 지지에서 빼면 순두(旬頭)의 지지가 나옴
+    const distFromGap = stemIdx; // 갑(0)에서 일간까지의 거리
+    const xunHeadBranch = (branchIdx - distFromGap + 12) % 12; // 순두의 지지
+    
+    // 순두 지지에 따른 공망
+    // 갑자순(자=0) → 공망: 술(10), 해(11)
+    // 갑술순(술=10) → 공망: 신(8), 유(9)  
+    // 갑신순(신=8) → 공망: 오(6), 미(7)
+    // 갑오순(오=6) → 공망: 진(4), 사(5)
+    // 갑진순(진=4) → 공망: 인(2), 묘(3)
+    // 갑인순(인=2) → 공망: 자(0), 축(1)
+    
+    const GONGMANG_MAP = {
+        0: [10, 11],  // 갑자순 → 술해 공망
+        10: [8, 9],   // 갑술순 → 신유 공망
+        8: [6, 7],    // 갑신순 → 오미 공망
+        6: [4, 5],    // 갑오순 → 진사 공망
+        4: [2, 3],    // 갑진순 → 인묘 공망
+        2: [0, 1]     // 갑인순 → 자축 공망
+    };
+    
+    const gm = GONGMANG_MAP[xunHeadBranch] || [10, 11];
     const names = [BRANCH[gm[0]].c, BRANCH[gm[1]].c];
     const affected = [];
     const pillars = ['년지','월지','일지','시지'];
@@ -3864,6 +4020,10 @@ function analyzeGungwi(saju, birthYear) {
     const dm = saju.day.s;
     const curAge = new Date().getFullYear() - birthYear;
     
+    // 공망 계산
+    const gongmang = calcGongmang(saju);
+    const gmBranches = gongmang.gm; // 공망 지지 인덱스 배열
+    
     // 궁위 정의
     const gungwi = [
         {
@@ -3920,7 +4080,14 @@ function analyzeGungwi(saju, birthYear) {
         let rating = 'neutral';
         
         // 12운성으로 해당 궁위 에너지 판단
-        if (state.l >= 9) {
+        const bi = BRANCH.indexOf(g.pillar.b);
+        const isVoid = gmBranches.includes(bi); // 공망 여부
+        
+        if (isVoid) {
+            // 공망인 경우 에너지 설명 변경
+            analysis = '공망(空亡)이라 기운이 비어있어요. 해당 시기에 스스로 개척해야 해요.';
+            rating = 'neutral';
+        } else if (state.l >= 9) {
             analysis = '이 시기에 에너지가 강해요! 활발하게 움직이는 시기.';
             rating = 'good';
         } else if (state.l >= 6) {
@@ -5905,6 +6072,27 @@ function copySajuForAI() {
             ).join('\n') : '• 암합 없음';
         } catch(e) { amhapText = '• 암합 데이터 없음'; }
         
+        // 삼합국 분석 (중요!)
+        let samhapText = '';
+        let samhapWarning = '';
+        try {
+            const advInt = analyzeAdvancedInteractions(SAJU);
+            if (advInt && advInt.samhapGuk && advInt.samhapGuk.length) {
+                samhapText = advInt.samhapGuk.map(s => 
+                    `• ${s.name}: ${s.complete ? '완전 성립!' : '반합'} - ${s.desc}`
+                ).join('\n');
+                // 삼합 완성 시 특별 경고
+                const completeSamhap = advInt.samhapGuk.filter(s => s.complete);
+                if (completeSamhap.length > 0) {
+                    samhapWarning = `\n\n⚠️ [중요: 삼합국 완전 성립]\n${completeSamhap.map(s => 
+                        `${s.name}이 완성되어 지지의 ${s.result} 기운이 매우 강해졌습니다. 격국과 신강/신약 판단 시 이 오행 변화를 반드시 고려해야 합니다.`
+                    ).join('\n')}`;
+                }
+            } else {
+                samhapText = '• 삼합국 없음';
+            }
+        } catch(e) { samhapText = '• 삼합국 데이터 없음'; }
+        
         // 텍스트 생성
         let text = `===== 사주팔자 분석 결과 =====
 
@@ -5987,6 +6175,9 @@ ${banghapText}
 【암합(暗合)】
 ${amhapText}
 
+【삼합국(三合局)】
+${samhapText}${samhapWarning}
+
 【공망】
 • ${gongmang?.names?.join(', ') || ''}
 ${gongmang?.affected?.length ? '• 영향: ' + gongmang.affected.join(', ') + '에 공망' : '• 사주 내 공망 없음'}
@@ -6016,6 +6207,38 @@ ${monthText}
 - 말투는 따뜻하고 희망적이어야 합니다. 부정적인 내용도 반드시 건설적인 조언과 극복 방법과 함께 전달해주세요.
 - "~입니다"체로 격식있게 작성해주세요.
 - 각 항목당 2-3문단씩 상세히 서술해주세요.
+
+[⚠️ 중요 해석 지침]
+1. 삼합국(三合局)이 완전 성립했다면, 지지의 오행이 해당 오행으로 강력하게 변화합니다. 이 점을 격국/신강신약/용신 판단에 반드시 반영하세요.
+   - 인오술 화국 → 지지가 화(火) 기운으로
+   - 사유축 금국 → 지지가 금(金) 기운으로
+   - 신자진 수국 → 지지가 수(水) 기운으로
+   - 해묘미 목국 → 지지가 목(木) 기운으로
+
+2. 배우자성이 천간에 없더라도 지장간에 숨어있으면 "없음"이 아니라 "암장(暗藏)"으로 해석하세요.
+
+3. 대운/세운에서 삼합이 완성되는 해는 특별히 강조해서 해석하세요.
+   - 예: 원국에 신+진이 있고 대운에서 자(子)가 오면 → "신자진 수국 완성! 대운 기간 내내 물(재물/욕망)이 지배하는 시기"
+
+4. 대운 vs 세운 충돌 (왕지 충돌) 주의:
+   - 자오충(子午沖), 묘유충(卯酉沖) 등 왕지끼리의 충돌은 매우 강력합니다.
+   - 대운의 지지와 세운의 지지가 충돌하면 "격동의 해"로 해석하세요.
+   - 예: 대운 자(子) + 세운 오(午) = 수화상전(水火相戰). 심혈관/정신 건강 주의.
+
+5. 격국 판단 시 주의:
+   - 월지 정기만 보지 말고, 월간에 투출된 십신이 강한 세력을 형성하면 그것이 격국입니다.
+   - 예: 월지가 축(토)이지만 월간에 을목(편관)이 있고 해묘 반합이 있으면 → 편관격으로 봐야 함
+
+6. 신강/신약과 격국 해석의 조화:
+   - 신약(30% 이하)인데 비견격이면 "고집이 세다"가 아니라 "강박이 있다/예민하다"로 해석
+   - 신강(70% 이상)인데 편관격이면 "스트레스"가 아니라 "리더십/카리스마"로 해석
+
+7. 탕화살(湯火殺)이 있을 때:
+   - 원국에 축오/인사 탕화가 있는데 세운에서 오(午)나 사(巳)가 또 들어오면 "쌍탕화" → 멘탈 건강 특별 경고
+   - "화병, 약물 부작용, 감정 폭발"의 위험성을 반드시 언급
+
+8. 상관합살(傷官合殺)이 있으면:
+   - 단순히 "말조심"이 아니라 "위기를 기회로 바꾸는 협상가 재능"으로 긍정 해석
 
 [분석 요청사항]
 위 사주팔자 정보를 바탕으로 다음을 각각 상세히 서술형으로 해석해 주세요:
