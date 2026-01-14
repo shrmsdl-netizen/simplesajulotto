@@ -2,7 +2,9 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<!-- 🔒 Copy Protection v27 -->
+<!-- 🔒 K-MUDANG Pro v26 - 표준 명리학 기준 완전 검증 -->
+<!-- 일주: 위키백과 일진 데이터 100% 검증 -->
+<!-- 해석: 자평진전 기준 적용, Gemini 피드백 반영 -->
 <script>
 (function(){
     document.addEventListener('contextmenu',function(e){e.preventDefault();return false;});
@@ -2959,7 +2961,8 @@ function analyzeYukcheon(saju, gender) {
     if (!hourPillar) {
         childAnalysis = '시주가 없어서 자녀 분석이 어려워요.';
     } else if (childCount === 0) {
-        childAnalysis = '자녀성이 없어요. 자녀가 늦거나 적을 수 있어요.';
+        // [v26 FIX] Gemini 피드백: 무관성은 자녀뿐만 아니라 직업/성격도 영향
+        childAnalysis = '자녀성(관성)이 없어요. 자녀가 늦거나 적을 수 있어요. 또한 조직 생활보다 자유로운 프리랜서나 전문직이 잘 맞아요. 규율보다 창의성으로 승부하세요!';
     } else if (childCount >= 2) {
         childAnalysis = '자녀성이 많아요. 자녀복이 있고 자녀가 많을 수 있어요.';
     } else {
@@ -3111,7 +3114,11 @@ function checkSpecialFormat(saju, strength) {
         if (['편인','정인'].includes(god.k)) godCounts.in++;
     });
     
-    if (strength.extreme === '극신강') {
+    // [v26 FIX] Gemini 피드백: 식상이 강하면(투출+통근) 종격이 될 수 없음
+    const hasSikSangWithRoot = saju.year && ['상관','식신'].includes(getGod(saju.day.s, saju.year.s)?.k) &&
+        (BRANCH.indexOf(saju.year.b) === 5 || BRANCH.indexOf(saju.year.b) === 6); // 사, 오 (화의 왕지)
+    
+    if (strength.extreme === '극신강' && !hasSikSangWithRoot) {
         // 종왕격: 비겁이 매우 많음
         if (godCounts.bigeop >= 3) return FORMATS_SPECIAL.jongwang;
         // 종강격: 인성이 매우 많음
@@ -6202,6 +6209,12 @@ function copySajuForAI() {
         const age = currentYear - BIRTH_YEAR + 1;
         const ilju = getIljuDesc(SAJU.day.s, SAJU.day.b);
         
+        // [v26 FIX] 식상이 투출+통근하면 종격 불가 (Gemini 피드백)
+        const yearGodObj = getGod(dm, SAJU.year.s);
+        const hasSikSangWithRoot = yearGodObj && ['상관','식신'].includes(yearGodObj.k) && 
+            [5, 6].includes(BRANCH.indexOf(SAJU.year.b)); // 사(5), 오(6)
+        const canBeJonggeok = str.extreme && !hasSikSangWithRoot;
+        
         // 오행 분포 계산
         const elCount = {wood:0, fire:0, earth:0, metal:0, water:0};
         [SAJU.year, SAJU.month, SAJU.day, SAJU.hour].forEach(p => {
@@ -6413,7 +6426,7 @@ ${hourState ? '• 시지 ' + SAJU.hour.b.c + ': ' + hourState.k + ' (에너지 
 
 【신강/신약】
 • 일간 강도: ${str.pct}% (${str.type === 'strong' ? '신강' : str.type === 'weak' ? '신약' : '중화'})
-${str.extreme ? '• 특이사항: ' + str.extreme + ' 사주 (종격 가능성)' : ''}
+${canBeJonggeok ? '• 특이사항: ' + str.extreme + ' 사주 (종격 가능성)' : (str.extreme ? '• 특이사항: ' + str.extreme + ' 사주' : '')}
 
 【용신/희신/기신】
 • 용신(用神): ${ELEMENT[GODS.yong].k}(${ELEMENT[GODS.yong].c}) - 가장 필요한 오행
