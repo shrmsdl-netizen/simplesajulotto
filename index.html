@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<!-- 🔒 사주로또 Pro v28.3 [PUBLIC] - 왕지충돌+수다화식 - K-MUDANG 정교 로직 이식 - 복사버튼 버그 수정 -->
+<!-- 🔒 사주로또 Pro v28.5 [PUBLIC] - 무근경고추가 - K-MUDANG 정교 로직 이식 - 복사버튼 버그 수정 -->
 <script>
 (function(){
     document.addEventListener('contextmenu',function(e){e.preventDefault();return false;});
@@ -2841,9 +2841,19 @@ function analyzeSamhapBureau(saju) {
             result = { complete: true, partial: false, element: th.element, name: th.name, count: 3 };
             break;
         } else if (hasCount === 2 && hasCenter) {
-            // 반합 (왕지 포함)
+            // [v28.4 FIX] 반합 (왕지 포함) - 실제 있는 글자 명시
             if (!result.complete) {
-                result = { complete: false, partial: true, element: th.element, name: th.name + '(반합)', count: 2 };
+                const presentBranches = th.branches.filter(b => brIdxs.includes(b));
+                const branchChars = presentBranches.map(b => BRANCH[b].c).join('');
+                const bureauName = th.name.split('(')[0]; // '신자진 수국' 부분만
+                result = { 
+                    complete: false, 
+                    partial: true, 
+                    element: th.element, 
+                    name: branchChars + ' 반합(' + bureauName + ')', 
+                    count: 2,
+                    presentBranches // 실제 있는 지지 인덱스
+                };
             }
         }
     }
@@ -3022,6 +3032,32 @@ function fullAnalysis(saju, strength) {
         hwadaGeumso = '화다금소(火多金少): 불이 금을 녹이는 형국. 土/金 운에 발복, 火/木 운에 위험';
     }
     
+    // ====== Step 10-1: [v28.4 NEW] 화다수빈 체크 ======
+    let hwadaSuBin = null;
+    if (yong === 'water' && fireCount >= 3 && waterCount <= 1) {
+        hwadaSuBin = '화다수빈(火多水貧): 용신(水)이 火에 증발 위험! 재물/인연이 들어와도 금방 나감. 부동산/자격증에 묶어두세요';
+    }
+    
+    // ====== Step 10-2: [v28.5 NEW] 금다목절 체크 ======
+    let geumdaMokjeol = null;
+    const woodCount = elCount.wood || 0;
+    if (yong === 'wood' && metalCount >= 3 && woodCount <= 1) {
+        geumdaMokjeol = '금다목절(金多木折): 용신(木)이 金에 잘릴 위험! 木 운이 와도 효과가 약함. 水로 통관 필요';
+    }
+    
+    // ====== Step 10-3: [v28.5 NEW] 토다금매 체크 ======
+    let todaGeummae = null;
+    const earthCount = elCount.earth || 0;
+    if (yong === 'metal' && earthCount >= 4 && metalCount <= 1) {
+        todaGeummae = '토다금매(土多金埋): 용신(金)이 土에 묻힐 위험! 너무 많은 지원(인성)이 오히려 독. 木으로 토를 제어 필요';
+    }
+    
+    // ====== Step 10-4: [v28.5 NEW] 목다화식 체크 ======
+    let mokdaHwasik = null;
+    if (yong === 'fire' && woodCount >= 4 && fireCount <= 1) {
+        mokdaHwasik = '목다화식(木多火熄): 용신(火)이 木에 덮여 꺼질 위험! 나무가 너무 많아 불이 타지 못함. 약한 火운에 발복';
+    }
+    
     // ====== Step 11: [v28.3 NEW] 군비쟁재 체크 ======
     let gunbiJaengjae = null;
     const peerPowerFinal = elCount[peerEl] || 0;
@@ -3044,13 +3080,65 @@ function fullAnalysis(saju, strength) {
         wangjiChung = '묘유충(卯酉沖): 금목상전(金木相戰)! 간/담 vs 폐/대장 건강 주의';
     }
     
+    // ====== Step 13: [v28.5 NEW] 왕지 중첩 경고 (같은 왕지 3개 이상) ======
+    let wangjiJungcheop = null;
+    const wangji = {0: '子', 3: '卯', 6: '午', 9: '酉'};
+    const wangjiHealth = {
+        0: {name: '수', health: '신장/방광/생식기 극위험. 부종, 냉증 주의'},
+        3: {name: '목', health: '간/담/눈 극위험. 분노 조절, 근육 경련 주의'},
+        6: {name: '화', health: '심혈관/뇌/눈 극위험! 뇌출혈, 심장마비 주의. 2026년 午 세운 시 응급상황 대비'},
+        9: {name: '금', health: '폐/대장/피부 극위험. 호흡기 질환, 피부병 주의'}
+    };
+    
+    for (const [bi, char] of Object.entries(wangji)) {
+        const count = brIdxs.filter(b => b === parseInt(bi)).length;
+        if (count >= 3) {
+            const info = wangjiHealth[bi];
+            wangjiJungcheop = `왕지중첩(${char}${char}${char}): ${info.name} 기운 폭주! ${info.health}`;
+            break;
+        }
+    }
+    
+    // ====== Step 14: [v28.5 NEW] 무근(無根) 경고 ======
+    // 일간이 4개 지지의 지장간에 뿌리가 하나도 없는 경우
+    let mugeunWarning = null;
+    const dmStemIdx = STEM.indexOf(dm);
+    const dmElIdx = EL_ORDER.indexOf(dmEl);
+    const sameElStems = [dmElIdx * 2, dmElIdx * 2 + 1]; // 같은 오행의 천간 2개
+    
+    // 4개 지지의 지장간에서 같은 오행 천간 찾기
+    let hasRoot = false;
+    for (const bi of brIdxs) {
+        const jjg = JIJANGGAN[bi];
+        if (jjg) {
+            for (const item of jjg) {
+                if (sameElStems.includes(item.stem)) {
+                    hasRoot = true;
+                    break;
+                }
+            }
+        }
+        if (hasRoot) break;
+    }
+    
+    if (!hasRoot) {
+        const elNames = {wood: '목', fire: '화', earth: '토', metal: '금', water: '수'};
+        mugeunWarning = `무근(無根): 일간 ${dm.c}(${elNames[dmEl]})이 지지에 뿌리 없음. 겉으로는 있어 보여도 실제 힘이 없습니다. 운에서 비겁/인성이 올 때 비로소 힘을 얻습니다.`;
+    }
+    
     return {
         yong, hee, gi, yongReason,
         yongWarning,  // [v28.3 NEW]
         sudaHwasik,   // [v28.3 NEW]
         hwadaGeumso,  // [v28.3 NEW]
+        hwadaSuBin,   // [v28.4 NEW]
+        geumdaMokjeol, // [v28.5 NEW]
+        todaGeummae,   // [v28.5 NEW]
+        mokdaHwasik,   // [v28.5 NEW]
         gunbiJaengjae, // [v28.3 NEW]
         wangjiChung,  // [v28.3 NEW]
+        wangjiJungcheop, // [v28.5 NEW]
+        mugeunWarning, // [v28.5 NEW]
         johu: johuData?.yong || null,
         johuDesc: johuData?.desc || '',
         climate, samhap, elCount,
@@ -4063,6 +4151,36 @@ function calcYearLuck(year, saju, gods) {
         }
     }
     
+    // [v28.4 NEW] 백호대살 + 화운 복합 경고
+    // 백호대살 일주: 甲辰, 乙未, 丙戌, 丁丑, 戊辰, 己未, 庚戌, 辛丑, 壬辰, 癸未
+    const baihuIlju = ['甲辰','乙未','丙戌','丁丑','戊辰','己未','庚戌','辛丑','壬辰','癸未'];
+    const ilju = saju.day.s.c + saju.day.b.c;
+    if (baihuIlju.includes(ilju) && yearEls.includes('fire')) {
+        score -= 1;
+        warnings.push('🐅 백호대살 일주에 火 운! 수술, 사고, 피 보는 일에 주의. 건강검진 필수');
+    }
+    
+    // [v28.5 NEW] 왕지 중첩 + 세운으로 4개 경고
+    const wangji = {0: '子', 3: '卯', 6: '午', 9: '酉'};
+    const wangjiEl = {0: 'water', 3: 'wood', 6: 'fire', 9: 'metal'};
+    const wangjiHealth = {
+        0: '신장/방광 응급! 물난리 사주에 水 세운',
+        3: '간/담 응급! 분노 폭발 주의',
+        6: '심혈관/뇌출혈 응급! 불바다 사주에 火 세운 - 쓰러질 수 있음',
+        9: '폐/호흡기 응급! 금속 중독 주의'
+    };
+    
+    // yearBranchIdx는 위에서 이미 선언됨
+    if (wangji[yearBranchIdx]) {
+        // 세운이 왕지인 경우
+        const wangjiCount = sajuBranchIdxs.filter(b => b === yearBranchIdx).length;
+        if (wangjiCount >= 2) {
+            // 원국에 같은 왕지가 2개 이상 → 세운 포함 3개 이상
+            score -= 3;
+            warnings.push(`🚨 왕지폭발(${wangji[yearBranchIdx]}×${wangjiCount+1}): ${wangjiHealth[yearBranchIdx]}`);
+        }
+    }
+    
     return {
         year,
         pillar: yp,
@@ -4670,9 +4788,19 @@ function calcInteractions(saju) {
     
     // 귀문 (鬼門)
     const guiMen = [[2,7,'인미귀문'],[3,8,'묘신귀문'],[4,9,'진유귀문'],[5,10,'사술귀문'],[6,11,'오해귀문'],[1,6,'축오귀문']];
+    // [v28.4 NEW] 귀문이면서 동시에 합인 경우 체크
+    const hapGuiMen = [[4,9,'진유']]; // 辰酉는 육합이면서 귀문
+    
     for (let [a,b,n] of guiMen) {
         if (brs.includes(a) && brs.includes(b)) {
-            res.push({t:'鬼門',c:`${BRANCH[a].c}↔${BRANCH[b].c}`,m:n,d:'귀신의 문. 정신적 불안, 우울증 주의. 명상과 휴식이 필요해요.'});
+            // 합+귀문 복합 케이스 체크
+            const isHapGuiMen = hapGuiMen.some(([ha,hb]) => (a===ha && b===hb) || (a===hb && b===ha));
+            if (isHapGuiMen) {
+                res.push({t:'鬼門',c:`${BRANCH[a].c}↔${BRANCH[b].c}`,m:n + '(합귀문)',
+                    d:'합이면서 귀문! 겉으로는 좋아 보이지만 속으로 병드는 관계. 직장/조직에서 스트레스 누적 주의.'});
+            } else {
+                res.push({t:'鬼門',c:`${BRANCH[a].c}↔${BRANCH[b].c}`,m:n,d:'귀신의 문. 정신적 불안, 우울증 주의. 명상과 휴식이 필요해요.'});
+            }
         }
     }
     
@@ -5219,19 +5347,24 @@ function analyzeAdvancedInteractions(saju) {
     ];
     
     for (let sh of samhap) {
-        const hasCount = sh.branches.filter(b => brs.includes(b)).length;
+        const presentBranches = sh.branches.filter(b => brs.includes(b));
+        const hasCount = presentBranches.length;
         if (hasCount >= 2) {
             const hasCenter = brs.includes(sh.branches[1]); // 중심 지지 (오행의 왕지)
+            // [v28.4 FIX] 반합일 때 실제 있는 글자만 표기
+            const branchChars = presentBranches.map(b => BRANCH[b].c).join('');
+            const displayName = hasCount === 3 ? sh.name : branchChars + ' 반합(' + sh.name.split('(')[0] + ')';
+            
             result.samhapGuk.push({
-                name: sh.name,
+                name: displayName,
                 complete: hasCount === 3,
                 hasCenter,
                 result: ELEMENT[sh.result].k,
                 desc: hasCount === 3 ? 
                     `완전한 ${sh.name} 성립! ${ELEMENT[sh.result].k} 기운이 강해요.` :
                     hasCenter ? 
-                    `${sh.name} 반합(半合). 왕지(${BRANCH[sh.branches[1]].c})가 있어서 힘이 있어요.` :
-                    `${sh.name} 반합이지만 왕지가 없어서 힘이 약해요.`
+                    `${branchChars} 반합. 왕지(${BRANCH[sh.branches[1]].c})가 있어서 힘이 있어요.` :
+                    `${branchChars} 반합이지만 왕지가 없어서 힘이 약해요.`
             });
         }
     }
@@ -7190,8 +7323,14 @@ ${GODS.yongReason ? '• 판단근거: ' + GODS.yongReason : ''}
 ${GODS.yongWarning ? '• ' + GODS.yongWarning : ''}
 ${GODS.sudaHwasik ? '• ' + GODS.sudaHwasik : ''}
 ${GODS.hwadaGeumso ? '• ' + GODS.hwadaGeumso : ''}
+${GODS.hwadaSuBin ? '• ⚠️ ' + GODS.hwadaSuBin : ''}
+${GODS.geumdaMokjeol ? '• ⚠️ ' + GODS.geumdaMokjeol : ''}
+${GODS.todaGeummae ? '• ⚠️ ' + GODS.todaGeummae : ''}
+${GODS.mokdaHwasik ? '• ⚠️ ' + GODS.mokdaHwasik : ''}
 ${GODS.gunbiJaengjae ? '• ⚠️ ' + GODS.gunbiJaengjae : ''}
 ${GODS.wangjiChung ? '• ⚠️ ' + GODS.wangjiChung : ''}
+${GODS.wangjiJungcheop ? '• 🚨 ' + GODS.wangjiJungcheop : ''}
+${GODS.mugeunWarning ? '• 💨 ' + GODS.mugeunWarning : ''}
 ${GODS.johu ? '• 조후용신: ' + (GODS.johuDesc || '') : ''}
 ${GODS.climate ? '• 한난조습: ' + GODS.climate.type + ' - ' + GODS.climate.desc : ''}
 
