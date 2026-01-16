@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<!-- 🔒 사주로또 Pro v27 [PUBLIC] - K-MUDANG 정교 로직 이식 - 복사버튼 버그 수정 -->
+<!-- 🔒 사주로또 Pro v28.3 [PUBLIC] - 왕지충돌+수다화식 - K-MUDANG 정교 로직 이식 - 복사버튼 버그 수정 -->
 <script>
 (function(){
     document.addEventListener('contextmenu',function(e){e.preventDefault();return false;});
@@ -2461,15 +2461,39 @@ function calcStrength(saju) {
     const monthNames = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
     factors.push({ l: '월령득령', v: `${monthNames[mbi]}월 ${deukRyung ? '✓당령' : '✗실령'} (${ms >= 0 ? '+' : ''}${ms*6})`, p: deukRyung });
     
-    // ====== ★ 3. 실제 통근 (지장간 가중치 적용) ★ ======
+    // ====== ★ 3. 실제 통근 (지장간 + 12운성 가중치) ★ ======
     let realRootScore = 0;
     let hasRealRoot = { day: false, hour: false };
+    
+    // 12운성 시작점 (건록 위치)
+    const TWELVE_STARTS = [11, 6, 2, 9, 2, 9, 5, 0, 8, 3]; // 甲~癸
+    const TWELVE_NAMES = ['장생','목욕','관대','건록','제왕','쇠','병','사','묘','절','태','양'];
+    const dmIdx = STEM.findIndex(s => s.c === dm.c);
+    const isYangGan = dmIdx % 2 === 0;
     
     allBranches.forEach((b, idx) => {
         const bi = BRANCH.findIndex(br => br.c === b.c);
         const position = ['year', 'month', 'day', 'hour'][idx];
         const posWeight = position === 'day' ? 1.5 : position === 'hour' ? 1.3 : position === 'month' ? 1.2 : 1.0;
         
+        // [v28 NEW] 12운성 점수 추가
+        let twIdx = bi - TWELVE_STARTS[dmIdx];
+        if (!isYangGan) twIdx = -twIdx;
+        twIdx = ((twIdx % 12) + 12) % 12;
+        const twName = TWELVE_NAMES[twIdx];
+        
+        // 건록/제왕/관대/장생은 강한 뿌리
+        let twelveBonus = 0;
+        if (twName === '건록' || twName === '제왕') {
+            twelveBonus = 4 * posWeight;  // 가장 강한 뿌리
+            if (position === 'day' || position === 'hour') hasRealRoot[position] = true;
+        } else if (twName === '관대' || twName === '장생') {
+            twelveBonus = 2 * posWeight;  // 강한 뿌리
+            if (position === 'day' || position === 'hour') hasRealRoot[position] = true;
+        }
+        realRootScore += twelveBonus;
+        
+        // 지장간 통근
         const hidden = JIJANGGAN_W[bi] || [];
         hidden.forEach(h => {
             const hStem = STEM[h.s];
@@ -2481,9 +2505,9 @@ function calcStrength(saju) {
         });
     });
     
-    score += Math.min(realRootScore, 10);
-    const rootStrong = realRootScore >= 2;
-    factors.push({ l: '통근(실제뿌리)', v: rootStrong ? `✓ ${realRootScore.toFixed(1)}점` : `✗ 무근 (${realRootScore.toFixed(1)})`, p: rootStrong });
+    score += Math.min(realRootScore, 15);  // 캡 상향
+    const rootStrong = realRootScore >= 4;
+    factors.push({ l: '통근(실제뿌리)', v: rootStrong ? `✓ ${realRootScore.toFixed(1)}점` : `✗ 약근 (${realRootScore.toFixed(1)})`, p: rootStrong });
     
     // ====== ★ 4. 천간 투출 (합 무력화 반영) ★ ======
     let helpCount = 0;
@@ -2794,45 +2818,309 @@ const JOHU_TABLE = {
     }
 };
 
-// 한난조습(寒暖燥濕) 판단
+// ★ [v28 NEW] 삼합국 분석 함수 - 완성 여부와 오행 반환 ★
+function analyzeSamhapBureau(saju) {
+    const brs = [saju.year?.b, saju.month?.b, saju.day?.b, saju.hour?.b].filter(b => b);
+    const brIdxs = brs.map(b => BRANCH.indexOf(b));
+    
+    const THREE_HARMONY = [
+        { branches: [2, 6, 10], element: 'fire', name: '인오술 화국(寅午戌 火局)' },
+        { branches: [8, 0, 4], element: 'water', name: '신자진 수국(申子辰 水局)' },
+        { branches: [5, 9, 1], element: 'metal', name: '사유축 금국(巳酉丑 金局)' },
+        { branches: [11, 3, 7], element: 'wood', name: '해묘미 목국(亥卯未 木局)' }
+    ];
+    
+    let result = { complete: false, partial: false, element: null, name: null, count: 0 };
+    
+    for (const th of THREE_HARMONY) {
+        const hasCount = th.branches.filter(b => brIdxs.includes(b)).length;
+        const hasCenter = brIdxs.includes(th.branches[1]); // 왕지(중심) 존재 여부
+        
+        if (hasCount === 3) {
+            // 완전한 삼합국
+            result = { complete: true, partial: false, element: th.element, name: th.name, count: 3 };
+            break;
+        } else if (hasCount === 2 && hasCenter) {
+            // 반합 (왕지 포함)
+            if (!result.complete) {
+                result = { complete: false, partial: true, element: th.element, name: th.name + '(반합)', count: 2 };
+            }
+        }
+    }
+    
+    return result;
+}
+
+/* ========================================
+   ★★★ v28 통합 분석 파이프라인 (Full Analysis Pipeline) ★★★
+   
+   순서: 합충분석 → 오행재계산 → 신강신약 → 격국 → 용신
+   
+   용신 결정 우선순위:
+   1순위: 통관용신 (관살태왕+신약 → 인성으로 살인상생)
+   2순위: 병약용신 (특정 오행 과다 → 제어)
+   3순위: 조후용신 (한난조습 조절)
+   4순위: 억부용신 (신강/신약 기본)
+   ======================================== */
+
+function fullAnalysis(saju, strength) {
+    const dm = saju.day.s;
+    const dmEl = dm.e;
+    const dmi = STEM.indexOf(dm);
+    const mbi = BRANCH.indexOf(saju.month.b);
+    
+    // ====== Step 1: 합충 분석 ======
+    const samhap = analyzeSamhapBureau(saju);
+    const climate = analyzeClimate(saju);
+    
+    // ====== Step 2: 오행 분포 (삼합국 영향 반영) ======
+    let elCount = countElements(saju);
+    
+    // 삼합국 완성 시 해당 오행 강화
+    if (samhap.complete) {
+        elCount[samhap.element] = (elCount[samhap.element] || 0) + 2;
+    } else if (samhap.partial) {
+        elCount[samhap.element] = (elCount[samhap.element] || 0) + 1;
+    }
+    
+    // ====== Step 3: 십신별 오행 매핑 ======
+    const EL = EL_ORDER;
+    const dmIdx = EL.indexOf(dmEl);
+    const peerEl = dmEl;
+    const exprEl = EL[(dmIdx + 1) % 5];
+    const wealthEl = EL[(dmIdx + 2) % 5];
+    const officerEl = EL[(dmIdx + 3) % 5];
+    const sealEl = EL[(dmIdx + 4) % 5];
+    
+    // ====== Step 4: 세력 분석 ======
+    const str = strength || calcStrength(saju);
+    const isWeak = str.type === 'weak';
+    const isStrong = str.type === 'strong';
+    
+    // 관살 세력
+    const officerPower = (elCount[officerEl] || 0) + 
+        (samhap.element === officerEl ? (samhap.complete ? 3 : 1) : 0);
+    const isOfficerStrong = officerPower >= 2;
+    
+    // 재성 세력
+    const wealthPower = elCount[wealthEl] || 0;
+    const isWealthStrong = wealthPower >= 3;
+    
+    // 인성 세력
+    const sealPower = elCount[sealEl] || 0;
+    const isSealStrong = sealPower >= 3;
+    
+    // ====== Step 5: 용신 결정 (우선순위) ======
+    let yong, hee, gi;
+    let yongReason = '';
+    
+    // [v28.3 NEW] 0순위: 종격 체크 (90% 이상 극신강)
+    const peerPower = elCount[peerEl] || 0;
+    const isVeryStrong = str.percent >= 90;
+    
+    if (isVeryStrong && peerPower >= 6) {
+        // 종격: 용신이 역전됨 (강한 오행을 따라감)
+        yong = peerEl;  // 비겁 (나 자신)
+        hee = sealEl;   // 인성 (나를 생하는 것)
+        gi = officerEl; // 관살 (나를 극하는 것)
+        yongReason = `종격(從格): 일간 ${str.percent}%로 극신강. 강한 기운을 따라야 함`;
+    }
+    // 1순위: 통관용신 (관살태왕 + 신약)
+    else if (isWeak && isOfficerStrong) {
+        yong = sealEl;
+        hee = peerEl;
+        gi = wealthEl;
+        yongReason = '통관용신(살인상생): 관살이 강해 인성으로 통관';
+    }
+    // 2순위: 병약용신 (재다신약)
+    else if (isWealthStrong && isWeak) {
+        // [v28.2 FIX] 비겁이 원국에 약하면 인성 우선 (금생수)
+        const peerPower = elCount[peerEl] || 0;
+        
+        if (peerPower <= 1) {
+            // 비겁이 거의 없음 → 인성으로 비겁을 생해야 함
+            yong = sealEl;   // 인성
+            hee = peerEl;    // 비겁
+            yongReason = '병약용신(생비): 비겁 부재로 인성이 먼저 필요';
+        } else {
+            // 비겁이 있음 → 비겁으로 분재
+            yong = peerEl;
+            hee = sealEl;
+            yongReason = '병약용신(분재): 재성 과다로 비겁 필요';
+        }
+        gi = wealthEl;
+    }
+    // 3순위: 조후용신 (한난조습)
+    else if (climate.type.includes('극한') || climate.type.includes('한')) {
+        yong = 'fire';
+        if (isOfficerStrong && sealEl === 'water') {
+            hee = sealEl;
+            gi = officerEl;
+            yongReason = '조후용신(해동)+통관: 한습하나 관살도 강해 수도 필요';
+        } else {
+            hee = 'wood';
+            gi = 'water';
+            yongReason = '조후용신(해동): 한습 사주로 火 필요';
+        }
+    }
+    else if (climate.type.includes('극조') || climate.type.includes('조')) {
+        yong = 'water';
+        hee = 'metal';
+        gi = 'fire';
+        yongReason = '조후용신(윤택): 조열 사주로 水 필요';
+    }
+    // 4순위: 억부용신 (기본)
+    else if (isStrong) {
+        yong = exprEl;
+        hee = wealthEl;
+        gi = sealEl;
+        yongReason = '억부용신(설기): 신강하여 식상으로 설기';
+    }
+    else if (isWeak) {
+        yong = sealEl;
+        hee = peerEl;
+        gi = officerEl;
+        yongReason = '억부용신(부조): 신약하여 인성으로 생조';
+    }
+    else {
+        yong = exprEl;
+        hee = wealthEl;
+        gi = officerEl;
+        yongReason = '억부용신(설기): 중화 사주로 식상 설기';
+    }
+    
+    // ====== Step 6: 삼합국 식신제살 ======
+    if (samhap.complete && samhap.element === officerEl && yong !== sealEl) {
+        yong = exprEl;
+        yongReason += ` + 식신제살(${samhap.name})`;
+    }
+    
+    // ====== Step 7: 조후 테이블 참조 ======
+    const johuData = JOHU_TABLE[dmi] && JOHU_TABLE[dmi][mbi];
+    
+    // ====== Step 8: [v28.3 NEW] 용신 원국 부재 경고 ======
+    const yongCount = elCount[yong] || 0;
+    let yongWarning = null;
+    if (yongCount === 0) {
+        yongWarning = `⚠️ 용신(${ELEMENT[yong].k}) 원국 부재! 운에서 ${ELEMENT[yong].k}이 올 때만 효과 발휘`;
+    } else if (yongCount === 1) {
+        yongWarning = `⚠️ 용신(${ELEMENT[yong].k}) 원국에 1개뿐. 해당 글자가 충/극 받으면 위험`;
+    }
+    
+    // ====== Step 9: [v28.3 NEW] 수다화식 체크 ======
+    let sudaHwasik = null;
+    const waterCount = elCount.water || 0;
+    const fireCount = elCount.fire || 0;
+    if (dmEl === 'fire' && waterCount >= 3 && fireCount <= 1) {
+        sudaHwasik = '수다화식(水多火熄): 물이 불을 끄는 형국. 火/木 운에 발복, 水/金 운에 위험';
+    }
+    
+    // ====== Step 10: [v28.3 NEW] 화다금소 체크 ======
+    let hwadaGeumso = null;
+    const metalCount = elCount.metal || 0;
+    if (dmEl === 'metal' && fireCount >= 3 && metalCount <= 1) {
+        hwadaGeumso = '화다금소(火多金少): 불이 금을 녹이는 형국. 土/金 운에 발복, 火/木 운에 위험';
+    }
+    
+    // ====== Step 11: [v28.3 NEW] 군비쟁재 체크 ======
+    let gunbiJaengjae = null;
+    const peerPowerFinal = elCount[peerEl] || 0;
+    const wealthPowerFinal = elCount[wealthEl] || 0;
+    if (peerPowerFinal >= 4 && wealthPowerFinal <= 1) {
+        gunbiJaengjae = '군비쟁재(群比爭財): 비겁 태왕, 재성 약함. 동업 금지, 돈거래 시 배신 주의';
+    }
+    
+    // ====== Step 12: [v28.3 NEW] 왕지충 체크 ======
+    let wangjiChung = null;
+    const branches = [saju.year?.b, saju.month?.b, saju.day?.b, saju.hour?.b].filter(b => b);
+    const brIdxs = branches.map(b => BRANCH.indexOf(b));
+    
+    // 자오충(子午沖) 체크
+    if (brIdxs.includes(0) && brIdxs.includes(6)) {
+        wangjiChung = '자오충(子午沖): 수화상전(水火相戰)! 심혈관 vs 신장/방광 건강 주의';
+    }
+    // 묘유충(卯酉沖) 체크  
+    else if (brIdxs.includes(3) && brIdxs.includes(9)) {
+        wangjiChung = '묘유충(卯酉沖): 금목상전(金木相戰)! 간/담 vs 폐/대장 건강 주의';
+    }
+    
+    return {
+        yong, hee, gi, yongReason,
+        yongWarning,  // [v28.3 NEW]
+        sudaHwasik,   // [v28.3 NEW]
+        hwadaGeumso,  // [v28.3 NEW]
+        gunbiJaengjae, // [v28.3 NEW]
+        wangjiChung,  // [v28.3 NEW]
+        johu: johuData?.yong || null,
+        johuDesc: johuData?.desc || '',
+        climate, samhap, elCount,
+        officerPower, isOfficerStrong,
+        wealthPower, isWealthStrong,
+        type: str.type,
+        byungYak: findByungYak(saju, str),
+        sub: johuData?.sub || null
+    };
+}
+
+// 한난조습(寒暖燥濕) 판단 [v28 FIX - 지지 실제 한습 체크]
 function analyzeClimate(saju) {
     const mbi = BRANCH.indexOf(saju.month.b);
     const season = SEASON[mbi];
     
     let climate = {type: '', desc: '', needs: []};
     
-    // 지지의 오행 분포 체크
+    // 지지 인덱스 수집
     const brs = [saju.year?.b, saju.month?.b, saju.day?.b, saju.hour?.b].filter(b => b);
-    let fireCount = 0, waterCount = 0, earthCount = 0;
-    brs.forEach(b => {
-        if (b.e === 'fire') fireCount++;
-        if (b.e === 'water') waterCount++;
-        if (b.e === 'earth') earthCount++;
+    const brIdxs = brs.map(b => BRANCH.indexOf(b));
+    
+    // ★ 핵심: 지지의 실제 한습 체크 (season 무관)
+    // 한(寒) 지지: 子(0), 丑(1), 亥(11) - 겨울/얼음 글자
+    // 조(燥) 지지: 巳(5), 午(6), 未(7) - 여름/불 글자
+    let coldCount = 0, hotCount = 0;
+    brIdxs.forEach(bi => {
+        if (bi === 0 || bi === 1 || bi === 11) coldCount++;  // 子, 丑, 亥
+        if (bi === 5 || bi === 6 || bi === 7) hotCount++;    // 巳, 午, 未
     });
     
-    // 기본 기후 판단
-    if (season === 'winter') {
-        climate.type = waterCount >= 2 ? '극한(極寒)' : '한(寒)';
+    // 천간의 수(水)/화(火) 체크
+    const stems = [saju.year?.s, saju.month?.s, saju.day?.s, saju.hour?.s].filter(s => s);
+    let waterStemCount = 0, fireStemCount = 0;
+    stems.forEach(s => {
+        if (s.e === 'water') waterStemCount++;
+        if (s.e === 'fire') fireStemCount++;
+    });
+    
+    // ★ 한난조습 판단 (지지 실제 분포 우선)
+    const totalCold = coldCount + waterStemCount;
+    const totalHot = hotCount + fireStemCount;
+    
+    if (totalCold >= 4) {
+        climate.type = '극한(極寒)';
+        climate.desc = '꽁꽁 얼어붙은 사주입니다. 火 기운이 절실히 필요합니다.';
+        climate.needs = ['fire', 'wood'];
+    } else if (totalCold >= 3 || (coldCount >= 2 && season !== 'summer')) {
+        climate.type = '한(寒)';
         climate.desc = '차가운 사주입니다. 따뜻한 火 기운이 필요합니다.';
         climate.needs = ['fire', 'wood'];
-    } else if (season === 'summer') {
-        climate.type = fireCount >= 2 ? '극조(極燥)' : '조(燥)';
+    } else if (totalHot >= 4) {
+        climate.type = '극조(極燥)';
+        climate.desc = '불바다 사주입니다. 水 기운이 절실히 필요합니다.';
+        climate.needs = ['water', 'metal'];
+    } else if (totalHot >= 3 || (hotCount >= 2 && season !== 'winter')) {
+        climate.type = '조(燥)';
         climate.desc = '뜨겁고 건조한 사주입니다. 시원한 水 기운이 필요합니다.';
         climate.needs = ['water', 'metal'];
-    } else if (mbi === 1 || mbi === 4 || mbi === 7 || mbi === 10) {
-        // 토왕절
-        if (earthCount >= 2) {
-            climate.type = '습(濕)';
-            climate.desc = '습한 기운이 있는 사주입니다. 火로 건조하게 해야 합니다.';
-            climate.needs = ['fire', 'wood'];
-        } else {
-            climate.type = '중화(中和)';
-            climate.desc = '기후가 균형 잡힌 사주입니다.';
-            climate.needs = [];
-        }
+    } else if (season === 'winter') {
+        climate.type = '한(寒)';
+        climate.desc = '겨울 사주입니다. 따뜻한 火 기운이 필요합니다.';
+        climate.needs = ['fire', 'wood'];
+    } else if (season === 'summer') {
+        climate.type = '조(燥)';
+        climate.desc = '여름 사주입니다. 시원한 水 기운이 필요합니다.';
+        climate.needs = ['water', 'metal'];
     } else {
-        climate.type = '온(溫)';
-        climate.desc = '온화한 기운의 사주입니다.';
+        climate.type = '중화(中和)';
+        climate.desc = '기후가 비교적 균형 잡힌 사주입니다.';
         climate.needs = [];
     }
     
@@ -2866,47 +3154,116 @@ function findByungYak(saju, strength) {
     return { byung, yak, desc: byung ? `${ELEMENT[byung].k}이 과다하니 ${ELEMENT[yak].k}으로 제어` : null };
 }
 
-function calcGods(saju, str) {
+/* ========================================
+   [DEPRECATED] calcGods - v28.1부터 fullAnalysis() 사용 권장
+   이 함수는 하위 호환성을 위해 유지됩니다.
+   새 로직은 fullAnalysis()를 참조하세요.
+   ======================================== */
+function calcGods(saju, str, samhapResult) {
     const dm = saju.day.s;
     const dmi = STEM.indexOf(dm);
     const mbi = BRANCH.indexOf(saju.month.b);
     const season = SEASON[mbi];
     let yong, hee, gi, johu = null, johuDesc = '';
     
-    // 1. 기본 용신 (신강/신약 기준)
-    if (str.type === 'strong') { 
-        yong = EL_ORDER[(EL_ORDER.indexOf(dm.e) + 2) % 5]; // 재성
-        hee = EL_ORDER[(EL_ORDER.indexOf(dm.e) + 1) % 5]; // 식상
-        gi = EL_ORDER[(EL_ORDER.indexOf(dm.e) + 4) % 5];  // 인성
-    }
-    else if (str.type === 'weak') { 
-        yong = EL_ORDER[(EL_ORDER.indexOf(dm.e) + 4) % 5]; // 인성
-        hee = dm.e; // 비겁
-        gi = EL_ORDER[(EL_ORDER.indexOf(dm.e) + 3) % 5];  // 관살
-    }
-    else { 
-        yong = EL_ORDER[(EL_ORDER.indexOf(dm.e) + 1) % 5]; // 식상
-        hee = EL_ORDER[(EL_ORDER.indexOf(dm.e) + 2) % 5]; // 재성
-        gi = EL_ORDER[(EL_ORDER.indexOf(dm.e) + 3) % 5];  // 관살
-    }
+    // 1. 한난조습 분석 (먼저!)
+    const climate = analyzeClimate(saju);
+    const isHan = climate.type.includes('한') || climate.type.includes('寒');
+    const isJo = climate.type.includes('조') || climate.type.includes('燥');
     
-    // 2. 조후용신 고급 적용 (월별 테이블 사용)
+    // 2. 조후용신 테이블 조회
     const johuData = JOHU_TABLE[dmi] && JOHU_TABLE[dmi][mbi];
     if (johuData) {
         johu = johuData.yong;
         johuDesc = johuData.desc;
+    }
+    
+    // 3. 억부용신 기본 계산
+    const dmEl = dm.e;
+    const sealEl = EL_ORDER[(EL_ORDER.indexOf(dmEl) + 4) % 5];  // 인성
+    const peerEl = dmEl;  // 비겁
+    const exprEl = EL_ORDER[(EL_ORDER.indexOf(dmEl) + 1) % 5];  // 식상
+    const wealthEl = EL_ORDER[(EL_ORDER.indexOf(dmEl) + 2) % 5]; // 재성
+    const officerEl = EL_ORDER[(EL_ORDER.indexOf(dmEl) + 3) % 5]; // 관살
+    
+    // 4. ★ 통합 용신 결정 (조후 + 억부 + 삼합국) ★
+    if (str.type === 'strong') {
+        // 신강: 설기(식상) 또는 극(재/관) 필요
+        yong = exprEl;
+        hee = wealthEl;
+        gi = sealEl;
+    } else if (str.type === 'weak') {
+        // 신약: 기본적으로 인성/비겁 필요
+        yong = sealEl;
+        hee = peerEl;
+        gi = officerEl;
+    } else {
+        // 중화
+        yong = exprEl;
+        hee = wealthEl;
+        gi = officerEl;
+    }
+    
+    // 5. ★ [v28 FIX] 관살태왕 시 통관용신 체크 (조후보다 생존 우선!) ★
+    // 신약한데 관살이 강하면 인성(Water)이 생명줄! 기신으로 잡으면 안 됨
+    const ec = countElements(saju);
+    const officerCount = ec[officerEl] || 0;
+    const isOfficerStrong = officerCount >= 2 || (samhapResult && samhapResult.element === officerEl);
+    
+    if (str.type === 'weak' && isOfficerStrong) {
+        // 관살태왕 + 신약 → 인성이 통관용신 (살인상생)
+        // 조후보다 생존이 우선!
+        yong = sealEl;   // 인성이 용신 (金의 살기를 빼서 木을 생함)
+        hee = peerEl;    // 비겁이 희신
+        gi = wealthEl;   // 재성이 기신 (재생살 방지)
+        johuDesc = (johuDesc || '') + ' (통관용신: 관살태왕 제어)';
+    }
+    // 6. ★ [v28 NEW] 조후-억부 충돌 조정 ★
+    // 단, 관살태왕이 아닐 때만 조후 우선 적용
+    else if (isHan && (johu === 'fire' || yong === 'fire')) {
+        yong = 'fire';  // 조후 우선
+        hee = 'wood';   // 火를 생하는 木이 희신
+        gi = 'water';   // 火를 끄는 水는 기신!
+        johuDesc = (johuDesc || '') + ' (조후 우선: 한습 사주)';
+    }
+    
+    // 조습 사주에서 용신이 水면 → 火는 水를 끄므로 기신!
+    if (isJo && (johu === 'water' || yong === 'water')) {
+        yong = 'water';  // 조후 우선
+        hee = 'metal';   // 水를 생하는 金이 희신
+        gi = 'fire';     // 水를 끄는 火는 기신!
+        johuDesc = (johuDesc || '') + ' (조후 우선: 조열 사주)';
+    }
+    
+    // 6. ★ [v28 NEW] 삼합국 영향 반영 ★
+    if (samhapResult && samhapResult.complete) {
+        const samhapEl = samhapResult.element;
         
-        // 조후용신이 기신이 아니면 우선 적용
-        if (johu !== gi) {
-            hee = yong;
-            yong = johu;
+        // 삼합국이 일간을 극하면 식신제살(용신=식상)
+        if ((samhapEl === 'metal' && dmEl === 'wood') ||
+            (samhapEl === 'fire' && dmEl === 'metal') ||
+            (samhapEl === 'water' && dmEl === 'fire') ||
+            (samhapEl === 'wood' && dmEl === 'earth') ||
+            (samhapEl === 'earth' && dmEl === 'water')) {
+            // 관살태왕 → 식신제살
+            yong = exprEl;  // 식상으로 살을 제어
+            hee = 'fire';   // 식상을 돕는 오행 (조후 겸용 시)
+            johuDesc = (johuDesc || '') + ` (${samhapResult.name} 제살)`;
+        }
+        
+        // 삼합국이 일간을 생하면 설기용신
+        if ((samhapEl === 'water' && dmEl === 'wood') ||
+            (samhapEl === 'wood' && dmEl === 'fire') ||
+            (samhapEl === 'fire' && dmEl === 'earth') ||
+            (samhapEl === 'earth' && dmEl === 'metal') ||
+            (samhapEl === 'metal' && dmEl === 'water')) {
+            // 인성태왕 → 설기
+            yong = exprEl;  // 식상으로 설기
+            johuDesc = (johuDesc || '') + ` (${samhapResult.name} 설기)`;
         }
     }
     
-    // 3. 한난조습 분석
-    const climate = analyzeClimate(saju);
-    
-    // 4. 병약 분석
+    // 7. 병약 분석
     const byungYak = findByungYak(saju, str);
     
     return { 
@@ -3307,7 +3664,7 @@ function checkYangInGeonRok(saju) {
 }
 
 // 통합 격국 판정
-function calcFormat(saju, strength) {
+function calcFormat(saju, strength, samhapResult) {
     const str = strength || calcStrength(saju);
     
     // 1. 특수격 체크
@@ -3322,7 +3679,52 @@ function calcFormat(saju, strength) {
         return {...yangInGeonRok, type:'special', god:'양인'};
     }
     
-    // 3. 내격 판정 (월지 지장간 정기의 십신)
+    // 3. ★ [v28 NEW] 삼합국 완성 시 격국 재판단 ★
+    if (samhapResult && samhapResult.complete) {
+        const samhapEl = samhapResult.element;
+        const dm = saju.day.s;
+        const dmEl = dm.e;
+        
+        // 삼합국 오행이 일간에게 어떤 십신인지 계산
+        const EL_ORDER = ['wood','fire','earth','metal','water'];
+        const dmIdx = EL_ORDER.indexOf(dmEl);
+        const samhapIdx = EL_ORDER.indexOf(samhapEl);
+        const diff = (samhapIdx - dmIdx + 5) % 5;
+        
+        let samhapGod = '';
+        let samhapFormatInfo = null;
+        
+        // 0=비겁, 1=식상, 2=재성, 3=관살, 4=인성
+        if (diff === 0) {
+            samhapGod = '비견';  // 군비쟁재 가능성
+        } else if (diff === 1) {
+            samhapGod = '식신';  // 식상격
+        } else if (diff === 2) {
+            samhapGod = '편재';  // 재성격
+        } else if (diff === 3) {
+            samhapGod = '편관';  // 관살격 (살인상생/제살 필요)
+            samhapFormatInfo = {
+                n: `편관격(${samhapResult.name} 변격)`,
+                d: `${samhapResult.name}이 완성되어 관살이 태왕합니다. 식신제살이 필요하며, 제살이 되면 권력과 성공을 얻습니다. 칼을 쥔 장군의 기질이 있습니다.`,
+                b: '군경, 검찰, 의료, 감사, 법조계',
+                formatReason: `${samhapResult.name} 완전 성립으로 관살 지배`
+            };
+        } else if (diff === 4) {
+            samhapGod = '편인';  // 인성격 (설기 필요)
+        }
+        
+        // 관살격(편관/칠살)이면 특별 처리
+        if (samhapFormatInfo) {
+            return {
+                ...samhapFormatInfo,
+                god: samhapGod,
+                type: 'samhap_variation',
+                samhapBureau: samhapResult.name
+            };
+        }
+    }
+    
+    // 4. 내격 판정 (월지 지장간 정기의 십신)
     const mbi = BRANCH.indexOf(saju.month.b);
     const jj = JIJANGGAN[mbi];
     
@@ -3401,6 +3803,25 @@ function calcFormat(saju, strength) {
                     if (finalGod === monthGod.k) break;
                 }
             }
+        }
+    }
+    
+    // [v28.2 NEW] 지지 세력이 월간 투출보다 압도적이면 격국 재판단
+    // 재다신약 사주에서 재성이 지지를 장악하면 재격/가종재격
+    const dmEl = saju.day.s.e;
+    const wealthEl = EL_ORDER[(EL_ORDER.indexOf(dmEl) + 2) % 5];
+    const ec = countElements(saju);
+    const wealthPower = ec[wealthEl] || 0;
+    
+    // 재성이 지지에 3개 이상이고 신약하면 재격으로 재판단
+    if (wealthPower >= 3 && ['식신','상관'].includes(finalGod)) {
+        const str = calcStrength(saju);
+        if (str.type === 'weak') {
+            // 재성이 편재인지 정재인지 확인
+            const dayIdx = EL_ORDER.indexOf(dmEl);
+            const wealthGod = (dayIdx % 2 === 0) ? '편재' : '정재';
+            finalGod = wealthGod;
+            formatReason = `지지 재성(${ELEMENT[wealthEl].k}) 태왕 - 재다신약`;
         }
     }
     
@@ -3554,6 +3975,8 @@ function calcYearLuck(year, saju, gods) {
     const state = getTwelveState(dm, yp.b);
     
     let score = 0;
+    let warnings = [];
+    
     if ([yp.s.e, yp.b.e].includes(gods.yong)) score += 3;
     if ([yp.s.e, yp.b.e].includes(gods.hee)) score += 2;
     if ([yp.s.e, yp.b.e].includes(gods.gi)) score -= 3;
@@ -3562,12 +3985,91 @@ function calcYearLuck(year, saju, gods) {
     if (state.l >= 10) score += 1;
     else if (state.l <= 3) score -= 1;
     
+    // [v28.2 NEW] 용신 파괴 체크 (오행 상극)
+    const yearEls = [yp.s.e, yp.b.e];
+    
+    // 화극금: 火가 오는데 용신이 金
+    if (gods.yong === 'metal' && yearEls.includes('fire')) {
+        score -= 3;
+        warnings.push('⚠️ 화극금(火克金): 용신(金)이 세운의 火에 파괴됨');
+    }
+    // 수극화: 水가 오는데 용신이 火
+    if (gods.yong === 'fire' && yearEls.includes('water')) {
+        score -= 3;
+        warnings.push('⚠️ 수극화(水克火): 용신(火)이 세운의 水에 파괴됨');
+    }
+    // 금극목: 金이 오는데 용신이 木
+    if (gods.yong === 'wood' && yearEls.includes('metal')) {
+        score -= 3;
+        warnings.push('⚠️ 금극목(金克木): 용신(木)이 세운의 金에 파괴됨');
+    }
+    // 목극토: 木이 오는데 용신이 土
+    if (gods.yong === 'earth' && yearEls.includes('wood')) {
+        score -= 3;
+        warnings.push('⚠️ 목극토(木克土): 용신(土)이 세운의 木에 파괴됨');
+    }
+    // 토극수: 土가 오는데 용신이 水
+    if (gods.yong === 'water' && yearEls.includes('earth')) {
+        score -= 3;
+        warnings.push('⚠️ 토극수(土克水): 용신(水)이 세운의 土에 파괴됨');
+    }
+    
+    // [v28.2 NEW] 불바다 사주 + 화운 경고
+    const ec = countElements(saju);
+    const fireCount = ec.fire || 0;
+    if (fireCount >= 3 && yearEls.includes('fire')) {
+        score -= 2;
+        warnings.push('🔥 화염조토: 불바다 사주에 火 운이 와서 과열 위험');
+    }
+    
+    // [v28.3 NEW] 세운-원국 왕지 충돌 체크 (子午沖, 卯酉沖)
+    const sajuBranches = [saju.year.b, saju.month.b, saju.day.b];
+    if (saju.hour) sajuBranches.push(saju.hour.b);
+    const sajuBranchIdxs = sajuBranches.map(b => BRANCH.indexOf(b));
+    const yearBranchIdx = BRANCH.indexOf(yp.b);
+    
+    // 왕지 충돌 체크 (子0-午6, 卯3-酉9)
+    const wangjiClash = [
+        {a: 0, b: 6, name: '자오충(子午沖)', desc: '수화상전! 심혈관 vs 신장/방광 건강 주의'},
+        {a: 3, b: 9, name: '묘유충(卯酉沖)', desc: '금목교전! 간/담 vs 폐/대장 건강 주의'}
+    ];
+    
+    for (const clash of wangjiClash) {
+        // 세운 지지가 왕지이고, 원국에 반대 왕지가 있으면
+        if (yearBranchIdx === clash.a && sajuBranchIdxs.includes(clash.b)) {
+            score -= 3;
+            const positions = sajuBranchIdxs.map((idx, i) => idx === clash.b ? ['년지','월지','일지','시지'][i] : null).filter(p => p);
+            warnings.push(`⚡ ${clash.name}: 세운 ${BRANCH[clash.a].c}와 원국 ${positions.join('/')} ${BRANCH[clash.b].c} 충돌! ${clash.desc}`);
+        }
+        if (yearBranchIdx === clash.b && sajuBranchIdxs.includes(clash.a)) {
+            score -= 3;
+            const positions = sajuBranchIdxs.map((idx, i) => idx === clash.a ? ['년지','월지','일지','시지'][i] : null).filter(p => p);
+            warnings.push(`⚡ ${clash.name}: 세운 ${BRANCH[clash.b].c}와 원국 ${positions.join('/')} ${BRANCH[clash.a].c} 충돌! ${clash.desc}`);
+        }
+    }
+    
+    // [v28.3 NEW] 수다화식(水多火熄) 체크
+    const waterCount = ec.water || 0;
+    const dmEl = dm.e;
+    if (dmEl === 'fire' && waterCount >= 3 && (ec.fire || 0) <= 1) {
+        // 火 일간인데 水가 태왕하고 火가 약함
+        if (yearEls.includes('water')) {
+            score -= 2;
+            warnings.push('💧 수다화식(水多火熄): 물이 불을 끄는 형국! 水 운에 건강/활력 저하 주의');
+        }
+        if (yearEls.includes('fire') || yearEls.includes('wood')) {
+            score += 2; // 火/木 운은 오히려 좋음
+            warnings.push('🔥 수다화식 사주에 火/木 운! 꺼져가던 불이 살아나는 좋은 시기');
+        }
+    }
+    
     return {
         year,
         pillar: yp,
         god,
         state,
         score,
+        warnings,
         rating: score >= 3 ? 'great' : score >= 1 ? 'good' : score <= -2 ? 'bad' : 'neutral'
     };
 }
@@ -3612,7 +4114,32 @@ function analyzeLuckCross(saju, birthYear, gender, gods, targetYear) {
         const positions = ['년지','월지','일지','시지'];
         // 세운과 원국 충
         if (Math.abs(bi - sbi) === 6) {
-            result.analysis.push({type:'warning', text:`세운이 ${positions[idx]}와 충! ${idx===2 ? '배우자나 건강 주의!' : idx===0 ? '집안 어른 관련 일 있을 수 있어요.' : idx===1 ? '직장이나 사업에 변화 있을 수 있어요.' : '자녀나 후배 관련 일 있을 수 있어요.'}`});
+            // [v28 NEW] 왕지 충돌 특별 경고
+            const isWangjiClash = (bi === 0 && sbi === 6) || (bi === 6 && sbi === 0) ||  // 자오충
+                                  (bi === 3 && sbi === 9) || (bi === 9 && sbi === 3);    // 묘유충
+            
+            if (isWangjiClash) {
+                const clashName = (bi === 0 || sbi === 0) ? '자오충(子午沖)' : '묘유충(卯酉沖)';
+                const healthWarning = (bi === 0 || sbi === 0) 
+                    ? '심혈관(火)과 신장/생식기(水)가 충돌합니다!' 
+                    : '간(木)과 폐/신경(金)이 충돌합니다!';
+                
+                result.analysis.push({
+                    type: 'danger', 
+                    text: `🚨 ${clashName} 발동! 왕지끼리의 정면충돌입니다. ${healthWarning} ${idx === 3 ? '시지(자녀궁/말년) 충돌로 수술, 사고, 자녀 문제에 특히 주의하세요!' : idx === 2 ? '일지(배우자궁) 충돌로 배우자 건강과 부부관계에 격동이 있을 수 있습니다!' : ''}`,
+                });
+                result.wangjiClash = true;
+            } else {
+                result.analysis.push({type:'warning', text:`세운이 ${positions[idx]}와 충! ${idx===2 ? '배우자나 건강 주의!' : idx===0 ? '집안 어른 관련 일 있을 수 있어요.' : idx===1 ? '직장이나 사업에 변화 있을 수 있어요.' : '자녀나 후배 관련 일 있을 수 있어요.'}`});
+            }
+        }
+        
+        // [v28 NEW] 축오(丑午) 원진/귀문 체크
+        if ((bi === 1 && sbi === 6) || (bi === 6 && sbi === 1)) {
+            result.analysis.push({
+                type: 'warning',
+                text: `⚠️ 축오(丑午) 원진! ${positions[idx]}와 세운이 귀문/탕화 관계입니다. 정신적 스트레스와 감정 기복에 주의하세요.`
+            });
         }
     });
     
@@ -3622,6 +4149,13 @@ function analyzeLuckCross(saju, birthYear, gender, gods, targetYear) {
                          result.totalScore >= 2 ? 'good' : 
                          result.totalScore >= 0 ? 'neutral' : 
                          result.totalScore >= -2 ? 'caution' : 'difficult';
+    
+    // [v28.2 NEW] 용신 파괴 경고 추가
+    if (yearLuck.warnings && yearLuck.warnings.length > 0) {
+        yearLuck.warnings.forEach(w => {
+            result.analysis.push({type: 'danger', text: w});
+        });
+    }
     
     // [v25 NEW] 탕화살 중첩 경고 - Gemini 피드백 반영
     // 원국에 축오(丑午) 또는 인사(寅巳)가 있고 세운에서 午/巳가 오면 쌍탕화 경고
@@ -4001,13 +4535,20 @@ function calcInteractions(saju) {
     const brs = [BRANCH.indexOf(saju.year.b), BRANCH.indexOf(saju.month.b), BRANCH.indexOf(saju.day.b)];
     if (saju.hour) { stems.push(STEM.indexOf(saju.hour.s)); brs.push(BRANCH.indexOf(saju.hour.b)); }
     
-    // 천간합
+    // 천간합 [v28 FIX: 인접한 천간만 합 성립!]
     const stComb = [[0,5,'갑기합토'],[1,6,'을경합금'],[2,7,'병신합수'],[3,8,'정임합목'],[4,9,'무계합화']];
+    const positions = ['년간','월간','일간','시간'];
     for (let [a,b,n] of stComb) {
         for (let i = 0; i < stems.length; i++) {
             for (let j = i+1; j < stems.length; j++) {
                 if ((stems[i]===a && stems[j]===b) || (stems[i]===b && stems[j]===a)) {
-                    res.push({t:'天合',c:`${STEM[a].c}+${STEM[b].c}`,m:n,d:'천간이 합하여 새로운 기운을 만들어요!'});
+                    // ★ 인접성 체크: 바로 옆 글자만 합 성립 (년-월, 월-일, 일-시)
+                    if (j - i === 1) {
+                        res.push({t:'天合',c:`${STEM[a].c}+${STEM[b].c}`,m:n,d:`${positions[i]}-${positions[j]} 인접합. 새로운 기운을 만들어요!`});
+                    } else {
+                        // 멀리 떨어진 합은 '기반(氣絆)'으로 표시 (합력 미약)
+                        res.push({t:'氣絆',c:`${STEM[a].c}~${STEM[b].c}`,m:`${n}(기반)`,d:`${positions[i]}-${positions[j]} 원거리. 뜻은 있으나 합력이 약해요.`});
+                    }
                 }
             }
         }
@@ -5379,11 +5920,25 @@ function analyzeSaju() {
         }
         
         BIRTH_YEAR = y;
+        
+        // ★★★ [v28] 통합 분석 파이프라인 ★★★
+        // 1. 신강/신약 계산
         const str = calcStrength(SAJU);
         if (!str) { toast('신강/신약 계산 오류'); return; }
         
-        GODS = calcGods(SAJU, str);
+        // 2. 통합 분석 (삼합국, 한난조습, 용신 모두 연동)
+        GODS = fullAnalysis(SAJU, str);
         if (!GODS) { toast('용신 계산 오류'); return; }
+        
+        // 디버그 로그 (콘솔에서 확인 가능)
+        console.log('📊 v28 통합분석:', {
+            삼합국: GODS.samhap,
+            한난조습: GODS.climate?.type,
+            용신: GODS.yong,
+            희신: GODS.hee,
+            기신: GODS.gi,
+            판단근거: GODS.yongReason
+        });
         
         renderSaju(str);
         document.getElementById('saju-result').style.display = 'block';
@@ -5647,8 +6202,8 @@ function renderSaju(str) {
         ` : ''}
     `;
     
-    // 격국
-    const fmt = calcFormat(SAJU);
+    // 격국 [v28: GODS에서 삼합국 결과 사용]
+    const fmt = calcFormat(SAJU, null, GODS.samhap);
     document.getElementById('format').innerHTML = `
         <div class="info-box gold">
             <p><strong>${fmt.n}</strong></p>
@@ -6127,7 +6682,8 @@ function generateAIInterpretation(saju, gods, birthYear, gender) {
     
     // 여러 분석 결과 수집
     const interactions = calcInteractions(saju);
-    const format = calcFormat(saju);
+    const samhap = gods?.samhap || analyzeSamhapBureau(saju);  // [v28: gods에서 우선]
+    const format = calcFormat(saju, null, samhap);  // [v28]
     const sinsal = calcSinsal(saju);
     const gongmang = calcGongmang(saju);
     const luck = calcLuck(saju, birthYear, gender, gods);
@@ -6343,7 +6899,8 @@ function copySajuForAI() {
     try {
         const str = calcStrength(SAJU);
         const dm = SAJU.day.s;
-        const format = calcFormat(SAJU);
+        const samhap = GODS?.samhap || analyzeSamhapBureau(SAJU);  // [v28: GODS에서 우선]
+        const format = calcFormat(SAJU, str, samhap);  // [v28]
         const interactions = calcInteractions(SAJU) || [];
         const sinsal = calcSinsal(SAJU) || [];
         const gongmang = calcGongmang(SAJU);
@@ -6458,7 +7015,13 @@ function copySajuForAI() {
             }
             // 축오 탕화 + 용신이 火 + 세운이 丙午(병오)면 대발복 기회
             if ((hasChu || hasO) && GODS.yong === 'fire' && yp.s.c === '丙' && yp.b.c === '午') {
-                tanghwaWarningText += `\n🔥 ${currentYear}년 용신(火) 강력 유입! 대발복의 기회이나 감정 조절 필수!`;
+                tanghwaWarningText += `\n🔥 ${currentYear}년 용신(Fire) 강력 유입! 대발복의 기회이나 감정 조절 필수!`;
+            }
+            
+            // [v28.3 NEW] 세운 경고 (왕지충돌, 용신파괴 등)
+            const yearLuckResult = calcYearLuck(currentYear, SAJU, GODS);
+            if (yearLuckResult.warnings && yearLuckResult.warnings.length > 0) {
+                tanghwaWarningText += '\n' + yearLuckResult.warnings.join('\n');
             }
         } catch(e) { /* 탕화 체크 실패 */ }
         
@@ -6523,9 +7086,31 @@ function copySajuForAI() {
         try {
             const advInt = analyzeAdvancedInteractions(SAJU);
             if (advInt && advInt.samhapGuk && advInt.samhapGuk.length) {
-                samhapText = advInt.samhapGuk.map(s => 
-                    `• ${s.name}: ${s.complete ? '완전 성립!' : '반합'} - ${s.desc}`
-                ).join('\n');
+                // [v28.2 NEW] 반합 의미 해석 추가
+                const dmEl = dm.e;
+                const dmIdx = EL_ORDER.indexOf(dmEl);
+                const sealEl = EL_ORDER[(dmIdx + 4) % 5];  // 인성
+                const wealthEl = EL_ORDER[(dmIdx + 2) % 5]; // 재성
+                const officerEl = EL_ORDER[(dmIdx + 3) % 5]; // 관살
+                
+                samhapText = advInt.samhapGuk.map(s => {
+                    let meaning = '';
+                    const resultEl = s.result;
+                    
+                    // 반합의 의미 해석
+                    if (resultEl === sealEl) {
+                        meaning = ' → 인성(문서/학업/보호자)으로 변화. 돈이 자격증/학위로!';
+                    } else if (resultEl === wealthEl) {
+                        meaning = ' → 재성(돈/이성)으로 변화. 실속을 챙기는 구조!';
+                    } else if (resultEl === officerEl) {
+                        meaning = ' → 관살(직장/스트레스)로 변화. 책임과 압박 주의!';
+                    } else if (resultEl === dmEl) {
+                        meaning = ' → 비겁(형제/친구)으로 변화. 동료의 도움!';
+                    }
+                    
+                    return `• ${s.name}: ${s.complete ? '완전 성립!' : '반합'} - ${s.desc}${meaning}`;
+                }).join('\n');
+                
                 // 삼합 완성 시 특별 경고
                 const completeSamhap = advInt.samhapGuk.filter(s => s.complete);
                 if (completeSamhap.length > 0) {
@@ -6567,7 +7152,31 @@ ${hourState ? '• 시지 ' + SAJU.hour.b.c + ': ' + hourState.k + ' (에너지 
 • 토(土): ${elCount.earth}개
 • 금(金): ${elCount.metal}개
 • 수(水): ${elCount.water}개
-• 없는 오행: ${Object.entries(elCount).filter(e => e[1] === 0).map(e => ELEMENT[e[0]].k).join(', ') || '없음'}
+• 없는 오행: ${(() => {
+    // 천간+지지에서 없는 오행 찾기
+    const missing = Object.entries(elCount).filter(e => e[1] === 0).map(e => e[0]);
+    if (missing.length === 0) return '없음';
+    
+    // 지장간에서 암장 체크
+    const jijangElements = new Set();
+    [SAJU.year?.b, SAJU.month?.b, SAJU.day?.b, SAJU.hour?.b].filter(b => b).forEach(b => {
+        const bi = BRANCH.indexOf(b);
+        (JIJANGGAN[bi] || []).forEach(j => {
+            if (j.g) jijangElements.add(STEM[j.s].e);
+        });
+    });
+    
+    // 암장 vs 완전부재 구분
+    const result = [];
+    missing.forEach(el => {
+        if (jijangElements.has(el)) {
+            result.push(ELEMENT[el].k + '(지장간 암장)');
+        } else {
+            result.push(ELEMENT[el].k + '(완전부재)');
+        }
+    });
+    return result.join(', ');
+})()}
 
 【신강/신약】
 • 일간 강도: ${str.pct}% (${str.type === 'strong' ? '신강' : str.type === 'weak' ? '신약' : '중화'})
@@ -6577,6 +7186,12 @@ ${canBeJonggeok ? '• 특이사항: ' + str.extreme + ' 사주 (종격 가능�
 • 용신(用神): ${ELEMENT[GODS.yong].k}(${ELEMENT[GODS.yong].c}) - 가장 필요한 오행
 • 희신(喜神): ${ELEMENT[GODS.hee].k}(${ELEMENT[GODS.hee].c}) - 용신을 돕는 오행
 • 기신(忌神): ${ELEMENT[GODS.gi].k}(${ELEMENT[GODS.gi].c}) - 피해야 할 오행
+${GODS.yongReason ? '• 판단근거: ' + GODS.yongReason : ''}
+${GODS.yongWarning ? '• ' + GODS.yongWarning : ''}
+${GODS.sudaHwasik ? '• ' + GODS.sudaHwasik : ''}
+${GODS.hwadaGeumso ? '• ' + GODS.hwadaGeumso : ''}
+${GODS.gunbiJaengjae ? '• ⚠️ ' + GODS.gunbiJaengjae : ''}
+${GODS.wangjiChung ? '• ⚠️ ' + GODS.wangjiChung : ''}
 ${GODS.johu ? '• 조후용신: ' + (GODS.johuDesc || '') : ''}
 ${GODS.climate ? '• 한난조습: ' + GODS.climate.type + ' - ' + GODS.climate.desc : ''}
 
@@ -6886,7 +7501,7 @@ function analyzeMatch() {
     }
     
     const pStr = calcStrength(pSaju);
-    const pGods = calcGods(pSaju, pStr);
+    const pGods = fullAnalysis(pSaju, pStr);  // [v28 통합분석]
     
     // 분석 결과 저장
     let totalScore = 50;
