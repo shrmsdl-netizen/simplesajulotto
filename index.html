@@ -3068,8 +3068,8 @@ function fullAnalysis(saju, strength) {
     
     // ====== Step 11-2: [v28.6 NEW] 재다신약 체크 - Gemini 피드백 반영 ======
     let jaedaSinyak = null;
-    if (wealthPowerFinal >= 3 && pct <= 30) {
-        jaedaSinyak = `재다신약(財多身弱): 재성(돈) ${wealthPowerFinal}개로 과다하나 일간이 약해(${pct}%) 감당 못함. 돈 욕심 부리면 건강을 잃습니다. 부동산/자격증 형태로 묶어두세요.`;
+    if (wealthPowerFinal >= 3 && str.pct <= 30) {
+        jaedaSinyak = `재다신약(財多身弱): 재성(돈) ${wealthPowerFinal}개로 과다하나 일간이 약해(${str.pct}%) 감당 못함. 돈 욕심 부리면 건강을 잃습니다. 부동산/자격증 형태로 묶어두세요.`;
     }
     
     // ====== Step 12: [v28.3 NEW] 왕지충 체크 ======
@@ -6212,15 +6212,7 @@ function analyzeSaju() {
         GODS = fullAnalysis(SAJU, str);
         if (!GODS) { toast('용신 계산 오류'); return; }
         
-        // 디버그 로그 (콘솔에서 확인 가능)
-        console.log('📊 v28 통합분석:', {
-            삼합국: GODS.samhap,
-            한난조습: GODS.climate?.type,
-            용신: GODS.yong,
-            희신: GODS.hee,
-            기신: GODS.gi,
-            판단근거: GODS.yongReason
-        });
+        // 분석 완료 (디버그 로그 제거됨)
         
         renderSaju(str);
         document.getElementById('saju-result').style.display = 'block';
