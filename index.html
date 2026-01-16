@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<!-- 🔒 사주로또 Pro v28.5 [PUBLIC] - 무근경고추가 - K-MUDANG 정교 로직 이식 - 복사버튼 버그 수정 -->
+<!-- 🔒 사주로또 Pro v28.6 [PUBLIC] - 왕자충발+충승패+쇠신충왕+편인도식 - K-MUDANG 정교 로직 이식 - 복사버튼 버그 수정 -->
 <script>
 (function(){
     document.addEventListener('contextmenu',function(e){e.preventDefault();return false;});
@@ -3126,6 +3126,35 @@ function fullAnalysis(saju, strength) {
         mugeunWarning = `무근(無根): 일간 ${dm.c}(${elNames[dmEl]})이 지지에 뿌리 없음. 겉으로는 있어 보여도 실제 힘이 없습니다. 운에서 비겁/인성이 올 때 비로소 힘을 얻습니다.`;
     }
     
+    // ====== Step 15: [v28.6 NEW] 편인도식(偏印倒食) 경고 ======
+    // 식신격인데 편인이 식신을 충하면 밥그릇이 깨진 형국
+    let pyeoninDosik = null;
+    
+    // 월지와 일지 가져오기
+    const monthBi = BRANCH.indexOf(saju.month?.b);
+    const dayBi = BRANCH.indexOf(saju.day?.b);
+    
+    // 묘유충 체크 (월지-일지)
+    const isMaoYouChung = (monthBi === 3 && dayBi === 9) || (monthBi === 9 && dayBi === 3);
+    
+    if (isMaoYouChung) {
+        // 일간 기준으로 식신/편인 위치 체크
+        // 월지가 식신이고 일지가 편인인지, 또는 그 반대인지
+        const monthBranchEl = BRANCH_EL[monthBi];
+        const dayBranchEl = BRANCH_EL[dayBi];
+        
+        const dmElIdx = EL_ORDER.indexOf(dmEl);
+        const siksinEl = EL_ORDER[(dmElIdx + 1) % 5]; // 식신 오행
+        const pyeoninEl = EL_ORDER[(dmElIdx + 4) % 5]; // 편인 오행 (인성)
+        
+        // 월지가 식신이고 일지가 편인의 오행이면 편인도식
+        // 또는 지장간 기준으로 체크
+        if ((monthBranchEl === siksinEl && dayBranchEl === pyeoninEl) ||
+            (monthBranchEl === 'wood' && dayBranchEl === 'metal')) {
+            pyeoninDosik = `편인도식(偏印倒食): 월지(식신)와 일지(편인)가 묘유충! 재능(밥그릇)이 깨진 형국. 일을 시작해도 중도에 엎어지거나, 예민함 때문에 기회를 걷어찰 수 있습니다. 꾸준함이 개운법입니다.`;
+        }
+    }
+    
     return {
         yong, hee, gi, yongReason,
         yongWarning,  // [v28.3 NEW]
@@ -3139,6 +3168,7 @@ function fullAnalysis(saju, strength) {
         wangjiChung,  // [v28.3 NEW]
         wangjiJungcheop, // [v28.5 NEW]
         mugeunWarning, // [v28.5 NEW]
+        pyeoninDosik, // [v28.6 NEW]
         johu: johuData?.yong || null,
         johuDesc: johuData?.desc || '',
         climate, samhap, elCount,
@@ -3179,12 +3209,30 @@ function analyzeClimate(saju) {
     });
     
     // ★ 한난조습 판단 (지지 실제 분포 우선)
+    // [v28.6 FIX] 계절별 정확한 표현 - 봄에 "극한"은 부적절
     const totalCold = coldCount + waterStemCount;
     const totalHot = hotCount + fireStemCount;
     
+    // 계절 구분: 겨울(자축해), 봄(인묘진), 여름(사오미), 가을(신유술)
+    const isWinter = [0, 1, 11].includes(mbi); // 子, 丑, 亥월
+    const isSpring = [2, 3, 4].includes(mbi);  // 寅, 卯, 辰월
+    const isSummer = [5, 6, 7].includes(mbi);  // 巳, 午, 未월
+    const isAutumn = [8, 9, 10].includes(mbi); // 申, 酉, 戌월
+    
     if (totalCold >= 4) {
-        climate.type = '극한(極寒)';
-        climate.desc = '꽁꽁 얼어붙은 사주입니다. 火 기운이 절실히 필요합니다.';
+        if (isWinter) {
+            climate.type = '극한(極寒)';
+            climate.desc = '한겨울 얼어붙은 사주입니다. 火 기운이 절실히 필요합니다.';
+        } else if (isSpring) {
+            climate.type = '한습(寒濕)';
+            climate.desc = '봄이지만 水 기운이 과다하여 습하고 냉합니다. 火로 온기를 더해야 합니다.';
+        } else if (isAutumn) {
+            climate.type = '냉습(冷濕)';
+            climate.desc = '가을에 水가 과다하여 습하고 서늘합니다. 火 기운이 필요합니다.';
+        } else {
+            climate.type = '수과다(水過多)';
+            climate.desc = '여름이지만 水가 넘쳐납니다. 균형이 필요합니다.';
+        }
         climate.needs = ['fire', 'wood'];
     } else if (totalCold >= 3 || (coldCount >= 2 && season !== 'summer')) {
         climate.type = '한(寒)';
@@ -4178,6 +4226,81 @@ function calcYearLuck(year, saju, gods) {
             // 원국에 같은 왕지가 2개 이상 → 세운 포함 3개 이상
             score -= 3;
             warnings.push(`🚨 왕지폭발(${wangji[yearBranchIdx]}×${wangjiCount+1}): ${wangjiHealth[yearBranchIdx]}`);
+        }
+    }
+    
+    // [v28.6 NEW] 쇠신충왕(衰神沖旺) 경고 - 용신이 와도 기신에 압도되면 위험
+    const yongEl = gods.yong;
+    const giEl = gods.gi;
+    const yongCount = ec[yongEl] || 0;
+    const giCount = ec[giEl] || 0;
+    
+    // 세운이 용신 오행을 가져오는데, 기신이 3배 이상이면 쇠신충왕
+    if (yearEls.includes(yongEl) && giCount >= 3 && yongCount <= 1) {
+        score -= 2;
+        const elKor = {wood:'木', fire:'火', earth:'土', metal:'金', water:'水'};
+        warnings.push(`⚠️ 쇠신충왕(衰神沖旺): 용신(${elKor[yongEl]}) 유입이나 기신(${elKor[giEl]}) ${giCount}개에 압도됨. 기회가 와도 경쟁자/방해자가 가로챔. 확장 금지!`);
+    }
+    
+    // [v28.6 NEW] 오행 단위 왕자충발(旺者沖發) - 태왕한 오행을 극하는 운이 오면 역습당함
+    const elKor = {wood:'木', fire:'火', earth:'土', metal:'金', water:'水'};
+    const elHealth = {
+        wood: '간/담/눈/신경',
+        fire: '심장/혈관/뇌',
+        earth: '비장/위/소화기',
+        metal: '폐/대장/피부',
+        water: '신장/방광/생식기'
+    };
+    
+    // 상극 관계: 공격자 → 피해자
+    const keukRelation = {
+        fire: 'metal',   // 화극금
+        metal: 'wood',   // 금극목
+        wood: 'earth',   // 목극토
+        earth: 'water',  // 토극수
+        water: 'fire'    // 수극화
+    };
+    
+    // 원국에 태왕한 오행(4개 이상)을 극하려는 운이 오면 역습당함
+    for (const [attackEl, victimEl] of Object.entries(keukRelation)) {
+        const victimCount = ec[victimEl] || 0;
+        const attackCount = ec[attackEl] || 0;
+        
+        // 피해자 오행이 4개 이상이고, 공격자 오행이 1개 이하인데, 세운이 공격자를 가져옴
+        if (victimCount >= 4 && attackCount <= 1 && yearEls.includes(attackEl)) {
+            score -= 2;
+            warnings.push(`⚔️ 왕자충발(旺者沖發): ${elKor[attackEl]} 운이 태왕한 ${elKor[victimEl]}(${victimCount}개)를 공격하나 역습당함! ${elKor[attackEl]}가 ${elKor[victimEl]}에 삼켜짐. ${elHealth[attackEl]} 손상 주의!`);
+        }
+    }
+    
+    // [v28.6 NEW] 충의 승패 명시 - 자오충/묘유충 시 누가 이기는지
+    // 자오충: 水 vs 火
+    if ((sajuBranchIdxs.includes(0) && yearBranchIdx === 6) || 
+        (sajuBranchIdxs.includes(6) && yearBranchIdx === 0)) {
+        const waterPower = ec.water || 0;
+        const firePower = ec.fire || 0;
+        
+        if (waterPower > firePower + 1) {
+            warnings.push(`💧 자오충 승패: 水(${waterPower}개) > 火(${firePower}개) → 火가 꺼짐! ${elHealth.fire} 손상, 열정/의욕 저하 주의`);
+        } else if (firePower > waterPower + 1) {
+            warnings.push(`🔥 자오충 승패: 火(${firePower}개) > 水(${waterPower}개) → 水가 마름! ${elHealth.water} 손상, 신장/방광 주의`);
+        } else {
+            warnings.push(`⚡ 자오충 격전: 水(${waterPower}개) ≈ 火(${firePower}개) → 양쪽 모두 손상! 심혈관+신장 모두 주의`);
+        }
+    }
+    
+    // 묘유충: 木 vs 金
+    if ((sajuBranchIdxs.includes(3) && yearBranchIdx === 9) || 
+        (sajuBranchIdxs.includes(9) && yearBranchIdx === 3)) {
+        const woodPower = ec.wood || 0;
+        const metalPower = ec.metal || 0;
+        
+        if (metalPower > woodPower + 1) {
+            warnings.push(`🪓 묘유충 승패: 金(${metalPower}개) > 木(${woodPower}개) → 木이 잘림! ${elHealth.wood} 손상, 간담/신경 주의`);
+        } else if (woodPower > metalPower + 1) {
+            warnings.push(`🌳 묘유충 승패: 木(${woodPower}개) > 金(${metalPower}개) → 도끼가 부러짐! ${elHealth.metal} 손상 대신 木의 반격`);
+        } else {
+            warnings.push(`⚡ 묘유충 격전: 木(${woodPower}개) ≈ 金(${metalPower}개) → 양쪽 모두 손상! 간담+폐 모두 주의`);
         }
     }
     
@@ -7146,9 +7269,18 @@ function copySajuForAI() {
             if (hasIn && hasSa && sbi === 5) {
                 tanghwaWarningText = `\n⚠️ ${currentYear}년 쌍탕화 경고! 원국 인사 탕화 + 세운 巳 중첩. 화상, 열병, 약물 부작용 주의!`;
             }
-            // 축오 탕화 + 용신이 火 + 세운이 丙午(병오)면 대발복 기회
+            // 축오 탕화 + 용신이 火 + 세운이 丙午(병오)
+            // [v28.6 FIX] 쇠신충왕 체크 - 기신이 용신보다 3배 이상이면 위험
             if ((hasChu || hasO) && GODS.yong === 'fire' && yp.s.c === '丙' && yp.b.c === '午') {
-                tanghwaWarningText += `\n🔥 ${currentYear}년 용신(Fire) 강력 유입! 대발복의 기회이나 감정 조절 필수!`;
+                const gisinCount = GODS.elCount?.[GODS.gi] || 0;
+                const yongsinCount = GODS.elCount?.[GODS.yong] || 0;
+                
+                if (gisinCount >= 3 && yongsinCount <= 1) {
+                    // 쇠신충왕: 기신이 압도적, 용신이 파괴될 위험
+                    tanghwaWarningText += `\n⚠️ ${currentYear}년 쇠신충왕(衰神沖旺) 경고! 용신(火)이 들어오나 기신(${GODS.gi === 'water' ? '水' : GODS.gi})이 ${gisinCount}개로 압도적. 용신이 꺼질 위험! 확장/투자 금지, 현금 사수의 해.`;
+                } else {
+                    tanghwaWarningText += `\n🔥 ${currentYear}년 용신(Fire) 유입! 기회의 해이나 감정 조절 필수.`;
+                }
             }
             
             // [v28.3 NEW] 세운 경고 (왕지충돌, 용신파괴 등)
@@ -7331,6 +7463,7 @@ ${GODS.gunbiJaengjae ? '• ⚠️ ' + GODS.gunbiJaengjae : ''}
 ${GODS.wangjiChung ? '• ⚠️ ' + GODS.wangjiChung : ''}
 ${GODS.wangjiJungcheop ? '• 🚨 ' + GODS.wangjiJungcheop : ''}
 ${GODS.mugeunWarning ? '• 💨 ' + GODS.mugeunWarning : ''}
+${GODS.pyeoninDosik ? '• 🍽️ ' + GODS.pyeoninDosik : ''}
 ${GODS.johu ? '• 조후용신: ' + (GODS.johuDesc || '') : ''}
 ${GODS.climate ? '• 한난조습: ' + GODS.climate.type + ' - ' + GODS.climate.desc : ''}
 
