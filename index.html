@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<!-- 🔒 사주로또 Pro v28.6 [PUBLIC] - 왕자충발+충승패+쇠신충왕+편인도식 - K-MUDANG 정교 로직 이식 - 복사버튼 버그 수정 -->
+<!-- 🔒 사주로또 Pro v28.6 [PUBLIC] - 대운세운자형+재다신약+왕자충발+충승패 - K-MUDANG 정교 로직 이식 - 복사버튼 버그 수정 -->
 <script>
 (function(){
     document.addEventListener('contextmenu',function(e){e.preventDefault();return false;});
@@ -3066,6 +3066,12 @@ function fullAnalysis(saju, strength) {
         gunbiJaengjae = '군비쟁재(群比爭財): 비겁 태왕, 재성 약함. 동업 금지, 돈거래 시 배신 주의';
     }
     
+    // ====== Step 11-2: [v28.6 NEW] 재다신약 체크 - Gemini 피드백 반영 ======
+    let jaedaSinyak = null;
+    if (wealthPowerFinal >= 3 && pct <= 30) {
+        jaedaSinyak = `재다신약(財多身弱): 재성(돈) ${wealthPowerFinal}개로 과다하나 일간이 약해(${pct}%) 감당 못함. 돈 욕심 부리면 건강을 잃습니다. 부동산/자격증 형태로 묶어두세요.`;
+    }
+    
     // ====== Step 12: [v28.3 NEW] 왕지충 체크 ======
     let wangjiChung = null;
     const branches = [saju.year?.b, saju.month?.b, saju.day?.b, saju.hour?.b].filter(b => b);
@@ -3165,6 +3171,7 @@ function fullAnalysis(saju, strength) {
         todaGeummae,   // [v28.5 NEW]
         mokdaHwasik,   // [v28.5 NEW]
         gunbiJaengjae, // [v28.3 NEW]
+        jaedaSinyak,  // [v28.6 NEW]
         wangjiChung,  // [v28.3 NEW]
         wangjiJungcheop, // [v28.5 NEW]
         mugeunWarning, // [v28.5 NEW]
@@ -4438,6 +4445,25 @@ function analyzeLuckCross(saju, birthYear, gender, gods, targetYear) {
         }
     };
     tanghwaCheck();
+    
+    // [v28.6 NEW] 대운+세운 자형 체크 - Gemini 피드백 반영
+    // 대운 지지와 세운 지지가 같으면 자형 (午午, 酉酉, 辰辰, 亥亥)
+    const selfPunishBranches = [4, 6, 9, 11]; // 辰, 午, 酉, 亥
+    if (dbi === sbi && selfPunishBranches.includes(dbi)) {
+        const branchNames = {4:'辰辰', 6:'午午', 9:'酉酉', 11:'亥亥'};
+        const healthWarnings = {
+            4: '비장/위장 질환, 소화불량',
+            6: '심혈관 질환, 뇌출혈, 정신적 폭발',
+            9: '폐/호흡기 질환, 우울증',
+            11: '신장/방광 질환, 자해 충동'
+        };
+        
+        result.analysis.push({
+            type: 'danger',
+            text: `🚨 대운+세운 자형(${branchNames[dbi]}自刑)! 자기 자신을 공격하는 형국입니다. ${healthWarnings[dbi]} 주의! 무리하지 말고 자기 관리에 집중하세요.`
+        });
+        result.daeunSaeunJahyung = true;
+    }
     
     return result;
 }
@@ -7460,6 +7486,7 @@ ${GODS.geumdaMokjeol ? '• ⚠️ ' + GODS.geumdaMokjeol : ''}
 ${GODS.todaGeummae ? '• ⚠️ ' + GODS.todaGeummae : ''}
 ${GODS.mokdaHwasik ? '• ⚠️ ' + GODS.mokdaHwasik : ''}
 ${GODS.gunbiJaengjae ? '• ⚠️ ' + GODS.gunbiJaengjae : ''}
+${GODS.jaedaSinyak ? '• 💸 ' + GODS.jaedaSinyak : ''}
 ${GODS.wangjiChung ? '• ⚠️ ' + GODS.wangjiChung : ''}
 ${GODS.wangjiJungcheop ? '• 🚨 ' + GODS.wangjiJungcheop : ''}
 ${GODS.mugeunWarning ? '• 💨 ' + GODS.mugeunWarning : ''}
