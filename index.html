@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<!-- 🔒 사주로또 Pro v28.6 [PUBLIC] - 대운세운자형+재다신약+왕자충발+충승패 - K-MUDANG 정교 로직 이식 - 복사버튼 버그 수정 -->
+<!-- 🔒 사주로또 Pro v28.7 [PUBLIC] - 납음오행 계산공식 수정(60갑자인덱스기반) -->
 <script>
 (function(){
     document.addEventListener('contextmenu',function(e){e.preventDefault();return false;});
@@ -2024,8 +2024,17 @@ function getTwelveState(dayStem, branch) {
 function calcNapeum(stem, branch) {
     const si = STEM.indexOf(stem);
     const bi = BRANCH.indexOf(branch);
-    // 60갑자 순서 계산
-    const idx = (si * 6 + Math.floor(bi / 2)) % 30;
+    // [v28.7 FIX] 납음 계산 공식 수정 - 60갑자 인덱스 기반
+    // 60갑자 인덱스를 먼저 구한 후 /2로 납음 인덱스 계산
+    let idx60 = -1;
+    for (let i = 0; i < 60; i++) {
+        if (i % 10 === si && i % 12 === bi) {
+            idx60 = i;
+            break;
+        }
+    }
+    if (idx60 === -1) idx60 = 0; // fallback
+    const idx = Math.floor(idx60 / 2);
     const napeum = NAPEUM[idx];
     return {
         name: napeum.name,
