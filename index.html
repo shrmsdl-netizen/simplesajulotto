@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<!-- 🔒 K-MUDANG Pro v26 - 복사버튼 버그 수정 -->
+<!-- 🔒 사주로또 Pro v27 [PUBLIC] - K-MUDANG 정교 로직 이식 - 복사버튼 버그 수정 -->
 <script>
 (function(){
     document.addEventListener('contextmenu',function(e){e.preventDefault();return false;});
@@ -25,14 +25,14 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="🍀 사주로또 Pro - 천년 명리학의 지혜">
 <meta property="og:description" content="✨ 전문가 수준 사주팔자 분석 · 💕 과학적 궁합 진단 · 🎲 역대 당첨번호 제외 로또">
-<meta property="og:image" content="https://simplesajulotto.com/share-thumbnail.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/shrmsdl-netizen/simplesajulotto/main/share-thumbnail.png">
 <meta property="og:url" content="https://simplesajulotto.com">
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="🍀 사주로또 Pro - 천년 명리학의 지혜">
 <meta name="twitter:description" content="✨ 전문가 수준 사주팔자 분석 · 💕 과학적 궁합 진단 · 🎲 역대 당첨번호 제외 로또">
-<meta name="twitter:image" content="https://simplesajulotto.com/share-thumbnail.png">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/shrmsdl-netizen/simplesajulotto/main/share-thumbnail.png">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700;900&display=swap" rel="stylesheet">
@@ -673,7 +673,7 @@ footer.tab-footer.active { display: block; }
 
 <!-- 워터마크 배경 -->
 <div class="watermark">
-    <img src="share-thumbnail.png" alt="" onerror="this.parentElement.style.display='none'">
+    <img src="https://raw.githubusercontent.com/shrmsdl-netizen/simplesajulotto/main/share-thumbnail.png" alt="" onerror="this.parentElement.style.display='none'">
 </div>
 
 <!-- ========================================
@@ -1441,7 +1441,7 @@ function getShareText() {
 }
 
 function getShareImageUrl() {
-    return 'https://simplesajulotto.com/share-thumbnail.png';
+    return 'https://raw.githubusercontent.com/shrmsdl-netizen/simplesajulotto/main/share-thumbnail.png';
 }
 
 function copyShareLink() {
@@ -1666,7 +1666,7 @@ function lunarToSolar(ly, lm, ld) {
 }
 
 function adjustTime(y, m, d, h) {
-    // [v26 FIX] h는 시지 인덱스(0-11)로 입력됨
+    // [v27 FIX] h는 시지 인덱스(0-11)로 입력됨
     // 사용자가 직접 시지를 선택하므로 서머타임/30분 보정 불필요
     // 단, 자시(h=0)의 경우 야자시(23:30~00:29) 처리 고려
     // 현재는 모두 조자시(00:30~01:29)로 가정
@@ -1814,7 +1814,7 @@ function calcDayPillar(y, m, d) {
     const adjY = y + 4800 - a;
     const adjM = m + 12 * a - 3;
     const jdn = d + Math.floor((153 * adjM + 2) / 5) + 365 * adjY + Math.floor(adjY / 4) - Math.floor(adjY / 100) + Math.floor(adjY / 400) - 32045;
-    // [v26 FIX] 검증된 기준점 - 위키백과 일진 데이터 기반 (2024/1/1 = 甲子)
+    // [v27 FIX] 검증된 기준점 - 위키백과 일진 데이터 기반 (2024/1/1 = 甲子)
     const baseJdn = 2460311;
     const idx60 = ((jdn - baseJdn) % 60 + 60) % 60;
     return { s: STEM[idx60 % 10], b: BRANCH[idx60 % 12] };
@@ -2368,127 +2368,272 @@ function analyzeGyoungi(luck, birthYear, currentYear) {
 }
 
 function calcStrength(saju) {
+    // [v27 UPGRADE] K-MUDANG 정교 로직 이식
     const dm = saju.day.s;
     const dme = dm.e;
-    const season = SEASON[BRANCH.indexOf(saju.month.b)];
+    const mbi = BRANCH.findIndex(b => b.c === saju.month.b.c);
+    const season = SEASON[mbi];
     let score = 0;
     const factors = [];
     
-    // 오행 관계 계산
-    const myEls = [dme, EL_ORDER[(EL_ORDER.indexOf(dme) + 4) % 5]]; // 비겁 + 인성
-    const jaes = [EL_ORDER[(EL_ORDER.indexOf(dme) + 2) % 5]]; // 재성
-    const gwans = [EL_ORDER[(EL_ORDER.indexOf(dme) + 3) % 5]]; // 관살
+    // ====== 오행 관계 정의 ======
+    const peerEl = dme;  // 비겁 (같은 오행)
+    const sealEl = EL_ORDER[(EL_ORDER.indexOf(dme) + 4) % 5];  // 인성 (나를 생함)
+    const exprEl = EL_ORDER[(EL_ORDER.indexOf(dme) + 1) % 5];  // 식상 (내가 생함)
+    const wealthEl = EL_ORDER[(EL_ORDER.indexOf(dme) + 2) % 5]; // 재성 (내가 극함)
+    const officerEl = EL_ORDER[(EL_ORDER.indexOf(dme) + 3) % 5]; // 관성 (나를 극함)
+    const myEls = [peerEl, sealEl];
     
-    // 1. 월령득령 (가장 중요, 40%)
-    const seasonScore = { spring:{wood:3,fire:2,earth:0,metal:-1,water:-2}, summer:{fire:3,earth:2,metal:0,water:-1,wood:-2}, autumn:{metal:3,water:2,wood:0,fire:-1,earth:-2}, winter:{water:3,wood:2,fire:0,earth:-1,metal:-2} };
-    const ms = seasonScore[season][dme];
-    const deukRyung = ms >= 2;
-    score += ms * 4;
-    factors.push({ l: '월령득령', v: deukRyung ? `득령(+${ms*4})` : `실령(${ms*4})`, p: deukRyung });
+    // ====== 지장간 테이블 (정기, 중기, 여기 + 가중치) ======
+    const JIJANGGAN_W = {
+        0: [{s:9, w:1.0}],                              // 子: 癸(정기)
+        1: [{s:5, w:0.6}, {s:7, w:0.2}, {s:9, w:0.2}], // 丑: 己, 辛, 癸
+        2: [{s:0, w:0.6}, {s:2, w:0.2}, {s:4, w:0.2}], // 寅: 甲, 丙, 戊
+        3: [{s:1, w:1.0}],                              // 卯: 乙(정기)
+        4: [{s:4, w:0.6}, {s:9, w:0.2}, {s:1, w:0.2}], // 辰: 戊, 癸, 乙
+        5: [{s:2, w:0.6}, {s:4, w:0.2}, {s:6, w:0.2}], // 巳: 丙, 戊, 庚
+        6: [{s:3, w:0.7}, {s:5, w:0.3}],               // 午: 丁, 己
+        7: [{s:5, w:0.6}, {s:3, w:0.2}, {s:1, w:0.2}], // 未: 己, 丁, 乙
+        8: [{s:6, w:0.6}, {s:8, w:0.2}, {s:4, w:0.2}], // 申: 庚, 壬, 戊
+        9: [{s:7, w:1.0}],                              // 酉: 辛(정기)
+        10:[{s:4, w:0.6}, {s:7, w:0.2}, {s:3, w:0.2}], // 戌: 戊, 辛, 丁
+        11:[{s:8, w:0.7}, {s:0, w:0.3}]                // 亥: 壬, 甲
+    };
     
-    // 2. 지지 통근 (뿌리, 30%) - 지장간 정기/중기/여기 구분
-    let roots = 0;
-    const allBr = [saju.year.b, saju.month.b, saju.day.b, saju.hour?.b].filter(b => b);
-    const jijanggan = {0:[9],1:[9,7,5],2:[0,2,4],3:[1],4:[4,1,9],5:[2,4,6],6:[3,5],7:[5,3,1],8:[6,8,4],9:[7],10:[4,7,3],11:[8,0]};
-    allBr.forEach(b => {
-        const bi = BRANCH.indexOf(b);
-        if (myEls.includes(b.e)) roots += 1.5; // 본기가 비겁/인성
-        const hidden = jijanggan[bi] || [];
-        hidden.forEach((hi, idx) => {
-            const hEl = STEM[hi].e;
-            if (myEls.includes(hEl)) roots += (idx === 0 ? 0.5 : 0.3); // 정기 > 중기 > 여기
-        });
-    });
-    const rootStrong = roots >= 3;
-    score += Math.min(roots * 1.5, 8);
-    factors.push({ l: '지지통근', v: rootStrong ? `강(${roots.toFixed(1)})` : `약(${roots.toFixed(1)})`, p: rootStrong });
+    // ====== 천간/지지 수집 ======
+    const allStems = [saju.year.s, saju.month.s, saju.hour?.s].filter(s => s);
+    const allBranches = [saju.year.b, saju.month.b, saju.day.b, saju.hour?.b].filter(b => b);
+    const branchIndices = allBranches.map(b => BRANCH.findIndex(br => br.c === b.c));
     
-    // 3. 천간 투출 - 비겁/인성 vs 관살/재성
-    let helps = 0, attacks = 0;
-    const allSt = [saju.year.s, saju.month.s, saju.hour?.s].filter(s => s);
-    allSt.forEach(st => {
-        if (myEls.includes(st.e)) helps++;
-        if (gwans.includes(st.e)) attacks += 1.5;
-        if (jaes.includes(st.e)) attacks += 0.5;
-    });
-    score += helps * 2;
-    score -= attacks;
-    if (helps >= 1) factors.push({ l: '천간투출', v: `비겁인성 ${helps}개`, p: true });
+    // ====== ★ 1. 천간합 인접성 체크 (K-MUDANG 핵심 로직) ★ ======
+    const STEM_COMBINE = [[0,5],[1,6],[2,7],[3,8],[4,9]]; // 甲己, 乙庚, 丙辛, 丁壬, 戊癸
+    let disabledSeals = [];
+    let disabledPeers = [];
     
-    // 4. 관살 압박
-    let gwanCount = 0;
-    [...allSt, ...allBr].forEach(p => { if (gwans.includes(p.e)) gwanCount++; });
-    if (gwanCount >= 2) { score -= 2; factors.push({ l: '관살압박', v: `${gwanCount}개 (신약↓)`, p: false }); }
-    
-    // 5. 재성 과다
-    let jaeCount = 0;
-    [...allSt, ...allBr].forEach(p => { if (jaes.includes(p.e)) jaeCount++; });
-    if (jaeCount >= 3) { score -= 2; factors.push({ l: '재성과다', v: `${jaeCount}개 (신약↓)`, p: false }); }
-    
-    // 6. 일지 12운성
-    const ds = getTwelveState(dm, saju.day.b);
-    const dsScore = ds.l >= 8 ? 3 : ds.l >= 6 ? 1 : ds.l >= 4 ? 0 : ds.l >= 2 ? -1 : -2;
-    score += dsScore;
-    factors.push({ l: '일지12운', v: `${ds.k}(${dsScore >= 0 ? '+' : ''}${dsScore})`, p: ds.l >= 6 });
-    
-    // 7. 비겁 개수
-    let biCount = 0;
-    [...allSt, ...allBr].forEach(p => { if (p.e === dme) biCount++; });
-    if (biCount >= 3) { score += 2; factors.push({ l: '비겁다수', v: `${biCount}개 (신강↑)`, p: true }); }
-    
-    // 8. 인성 개수
-    const inEl = EL_ORDER[(EL_ORDER.indexOf(dme) + 4) % 5];
-    let inCount = 0;
-    [...allSt, ...allBr].forEach(p => { if (p.e === inEl) inCount++; });
-    if (inCount >= 2) { score += 1.5; factors.push({ l: '인성생부', v: `${inCount}개 (신강↑)`, p: true }); }
-    
-    // [v25 NEW] 9. 삼합국 완성 시 오행 점수 대폭 가산
-    const brs = allBr.map(b => BRANCH.indexOf(b));
-    const samhapSets = [
-        {branches: [2,6,10], result: 'fire', name: '인오술 화국'},
-        {branches: [5,9,1], result: 'metal', name: '사유축 금국'},
-        {branches: [8,0,4], result: 'water', name: '신자진 수국'},
-        {branches: [11,3,7], result: 'wood', name: '해묘미 목국'}
+    const adjacentPairs = [
+        { pos1: 'year', pos2: 'month', s1: saju.year.s, s2: saju.month.s },
+        { pos1: 'month', pos2: 'day', s1: saju.month.s, s2: saju.day.s },
+        { pos1: 'day', pos2: 'hour', s1: saju.day.s, s2: saju.hour?.s }
     ];
     
-    for (const sh of samhapSets) {
-        const hasCount = sh.branches.filter(b => brs.includes(b)).length;
-        const hasCenter = brs.includes(sh.branches[1]); // 왕지(중심) 존재 여부
+    adjacentPairs.forEach(pair => {
+        if (!pair.s1 || !pair.s2) return;
+        const idx1 = STEM.findIndex(s => s.c === pair.s1.c);
+        const idx2 = STEM.findIndex(s => s.c === pair.s2.c);
         
-        if (hasCount >= 2 && hasCenter) {
-            // 삼합 결과 오행이 일간을 돕는 오행인지 체크
-            if (myEls.includes(sh.result)) {
-                const bonus = hasCount === 3 ? 5 : 3; // 완성 5점, 반합 3점
-                score += bonus;
-                factors.push({ l: '삼합생조', v: `${sh.name} (+${bonus})`, p: true });
-            } else if (gwans.includes(sh.result)) {
-                // 삼합 결과가 관살이면 감점
-                const penalty = hasCount === 3 ? 4 : 2;
-                score -= penalty;
-                factors.push({ l: '삼합극신', v: `${sh.name} (${-penalty})`, p: false });
+        const isCombine = STEM_COMBINE.some(([a, b]) => 
+            (idx1 === a && idx2 === b) || (idx1 === b && idx2 === a)
+        );
+        
+        if (isCombine) {
+            if (pair.pos1 !== 'day') {
+                if (pair.s1.e === sealEl) disabledSeals.push(idx1);
+                if (pair.s1.e === peerEl) disabledPeers.push(idx1);
+            }
+            if (pair.pos2 !== 'day') {
+                if (pair.s2.e === sealEl) disabledSeals.push(idx2);
+                if (pair.s2.e === peerEl) disabledPeers.push(idx2);
+            }
+            factors.push({ l: '🔗 천간합', v: `${pair.s1.c}${pair.s2.c}合 (${pair.pos1}-${pair.pos2}) → 무력화`, p: false });
+        }
+    });
+    
+    // ====== ★ 2. 월령 득령 (토왕용사 포함 12개월 정밀 테이블) ★ ======
+    const monthScore = {
+        2: {wood:3, fire:1, earth:-2, metal:-2, water:-1},  // 寅월
+        3: {wood:3, fire:2, earth:-2, metal:-2, water:-1},  // 卯월
+        4: {earth:2, wood:0, fire:-1, metal:-1, water:-1},  // 辰월 (토왕용사)
+        5: {fire:3, earth:1, metal:-2, water:-2, wood:0},   // 巳월
+        6: {fire:3, earth:2, metal:-2, water:-2, wood:0},   // 午월
+        7: {earth:2, fire:1, wood:-1, metal:-1, water:-2},  // 未월 (토왕용사)
+        8: {metal:3, water:1, wood:-2, fire:-2, earth:0},   // 申월
+        9: {metal:3, water:2, wood:-2, fire:-2, earth:0},   // 酉월
+        10: {earth:2, metal:1, fire:-1, wood:-2, water:-1}, // 戌월 (토왕용사)
+        11: {water:3, wood:1, fire:-2, earth:-2, metal:0},  // 亥월
+        0: {water:3, wood:2, fire:-2, earth:-2, metal:0},   // 子월
+        1: {earth:2, water:0, metal:-1, wood:-1, fire:-2}   // 丑월 (토왕용사)
+    };
+    
+    const ms = monthScore[mbi][dme];
+    const deukRyung = ms >= 2;
+    score += ms * 6;
+    
+    const monthNames = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+    factors.push({ l: '월령득령', v: `${monthNames[mbi]}월 ${deukRyung ? '✓당령' : '✗실령'} (${ms >= 0 ? '+' : ''}${ms*6})`, p: deukRyung });
+    
+    // ====== ★ 3. 실제 통근 (지장간 가중치 적용) ★ ======
+    let realRootScore = 0;
+    let hasRealRoot = { day: false, hour: false };
+    
+    allBranches.forEach((b, idx) => {
+        const bi = BRANCH.findIndex(br => br.c === b.c);
+        const position = ['year', 'month', 'day', 'hour'][idx];
+        const posWeight = position === 'day' ? 1.5 : position === 'hour' ? 1.3 : position === 'month' ? 1.2 : 1.0;
+        
+        const hidden = JIJANGGAN_W[bi] || [];
+        hidden.forEach(h => {
+            const hStem = STEM[h.s];
+            if (hStem.e === peerEl || hStem.e === sealEl) {
+                realRootScore += h.w * posWeight * 2;
+                if (position === 'day') hasRealRoot.day = true;
+                if (position === 'hour') hasRealRoot.hour = true;
+            }
+        });
+    });
+    
+    score += Math.min(realRootScore, 10);
+    const rootStrong = realRootScore >= 2;
+    factors.push({ l: '통근(실제뿌리)', v: rootStrong ? `✓ ${realRootScore.toFixed(1)}점` : `✗ 무근 (${realRootScore.toFixed(1)})`, p: rootStrong });
+    
+    // ====== ★ 4. 천간 투출 (합 무력화 반영) ★ ======
+    let helpCount = 0;
+    let attackCount = 0;
+    let exprStemCount = 0;
+    
+    allStems.forEach((st, idx) => {
+        const si = STEM.findIndex(s => s.c === st.c);
+        
+        if (disabledSeals.includes(si) || disabledPeers.includes(si)) {
+            factors.push({ l: '⚠️ 합거', v: `${st.c} 무력화됨`, p: false });
+            return;
+        }
+        
+        if (st.e === peerEl) { helpCount++; score += 2.5; }
+        if (st.e === sealEl) { helpCount++; score += 2; }
+        if (st.e === officerEl) { attackCount++; score -= 2; }
+        if (st.e === wealthEl) { attackCount++; score -= 1; }
+        if (st.e === exprEl) { exprStemCount++; score -= 2; }
+    });
+    
+    if (helpCount > 0) factors.push({ l: '천간 비겁/인성', v: `${helpCount}개 투출`, p: true });
+    if (attackCount > 0) factors.push({ l: '천간 관/재 압박', v: `${attackCount}개`, p: false });
+    
+    // ====== ★ 5. 식상태과 강력 감점 ★ ======
+    let exprTotal = exprStemCount;
+    allBranches.forEach(b => { if (b.e === exprEl) exprTotal++; });
+    
+    if (exprTotal >= 3) {
+        score -= 4;
+        factors.push({ l: '⚠️ 식상태과', v: `${exprTotal}개 → 설기과다 (−4)`, p: false });
+    } else if (exprStemCount >= 2) {
+        score -= 2;
+        factors.push({ l: '⚠️ 식상 투출', v: `${exprStemCount}天干 (−2)`, p: false });
+    }
+    
+    // ====== 6. 관살 압박 ======
+    let officerTotal = 0;
+    [...allStems, ...allBranches].forEach(p => { if (p.e === officerEl) officerTotal++; });
+    if (officerTotal >= 2) { 
+        score -= 2; 
+        factors.push({ l: '관살압박', v: `${officerTotal}개 (−2)`, p: false }); 
+    }
+    
+    // ====== 7. 방합(方合) 체크 ======
+    const DIRECTIONAL = [
+        { branches: [2, 3, 4], element: 'wood', name: '寅卯辰 목국' },
+        { branches: [5, 6, 7], element: 'fire', name: '巳午未 화국' },
+        { branches: [8, 9, 10], element: 'metal', name: '申酉戌 금국' },
+        { branches: [11, 0, 1], element: 'water', name: '亥子丑 수국' }
+    ];
+    
+    let directionalFormed = null;
+    DIRECTIONAL.forEach(d => {
+        if (d.branches.every(b => branchIndices.includes(b))) {
+            directionalFormed = d;
+            if (d.element === peerEl) {
+                score += 8;
+                factors.push({ l: '🔥 방합', v: `${d.name} → 비겁 (+8)`, p: true });
+            } else if (d.element === sealEl) {
+                score += 6;
+                factors.push({ l: '🔥 방합', v: `${d.name} → 인성 (+6)`, p: true });
+            } else if (d.element === exprEl) {
+                score -= 5;
+                factors.push({ l: '⚠️ 방합', v: `${d.name} → 설기 (−5)`, p: false });
+            } else if (d.element === officerEl) {
+                score -= 6;
+                factors.push({ l: '⚠️ 방합', v: `${d.name} → 압박 (−6)`, p: false });
             }
         }
+    });
+    
+    // ====== 8. 삼합(三合) 체크 ======
+    const THREE_HARMONY = [
+        { branches: [2, 6, 10], element: 'fire', name: '寅午戌 화국' },
+        { branches: [8, 0, 4], element: 'water', name: '申子辰 수국' },
+        { branches: [5, 9, 1], element: 'metal', name: '巳酉丑 금국' },
+        { branches: [11, 3, 7], element: 'wood', name: '亥卯未 목국' }
+    ];
+    
+    if (!directionalFormed) {
+        THREE_HARMONY.forEach(th => {
+            const hasCount = th.branches.filter(b => branchIndices.includes(b)).length;
+            const hasCenter = branchIndices.includes(th.branches[1]);
+            
+            if (hasCount >= 2 && hasCenter) {
+                if (th.element === peerEl) {
+                    const bonus = hasCount === 3 ? 7 : 4;
+                    score += bonus;
+                    factors.push({ l: '🔥 삼합', v: `${th.name} → 비겁 (+${bonus})`, p: true });
+                } else if (th.element === sealEl) {
+                    const bonus = hasCount === 3 ? 5 : 3;
+                    score += bonus;
+                    factors.push({ l: '🔥 삼합', v: `${th.name} → 인성 (+${bonus})`, p: true });
+                } else if (th.element === exprEl) {
+                    const penalty = hasCount === 3 ? 4 : 2;
+                    score -= penalty;
+                    factors.push({ l: '⚠️ 삼합', v: `${th.name} → 설기 (−${penalty})`, p: false });
+                } else if (th.element === officerEl) {
+                    const penalty = hasCount === 3 ? 5 : 3;
+                    score -= penalty;
+                    factors.push({ l: '⚠️ 삼합', v: `${th.name} → 압박 (−${penalty})`, p: false });
+                }
+            }
+        });
     }
     
-    // [v25 NEW] 10. 왕지 충돌 감점 (자오충, 묘유충)
+    // ====== 9. 왕지 충돌 ======
     const wangjiClash = [[0,6,'자오충'],[3,9,'묘유충']];
     for (const [a, b, name] of wangjiClash) {
-        if (brs.includes(a) && brs.includes(b)) {
-            score -= 2;
-            factors.push({ l: '왕지충', v: `${name} (-2)`, p: false });
+        if (branchIndices.includes(a) && branchIndices.includes(b)) {
+            score -= 3;
+            factors.push({ l: '⚡ 왕지충', v: `${name} (−3)`, p: false });
         }
     }
     
-    // 극신강/극신약 판정
+    // ====== 신강/신약 판정 ======
     let type = 'balanced';
     let extreme = null;
+    
     if (score >= 15) { type = 'strong'; extreme = '극신강'; }
     else if (score >= 8) type = 'strong';
     else if (score >= 3) type = 'balanced';
     else if (score <= -5) { type = 'weak'; extreme = '극신약'; }
     else if (score <= 2) type = 'weak';
     
-    return { type, score: Math.round(score * 10) / 10, pct: Math.round(Math.min(100, Math.max(0, (score + 5) * 4)) * 10) / 10, factors, extreme };
+    // 실제 뿌리가 있으면 극신약 불가
+    if ((hasRealRoot.day || hasRealRoot.hour) && extreme === '극신약') {
+        extreme = null;
+        type = 'weak';
+        factors.push({ l: '⚡ 뿌리보정', v: '극신약→신약', p: true });
+    }
+    
+    // ====== 퍼센트 변환 ======
+    let pct = Math.round(((score + 15) / 40) * 100);
+    pct = Math.max(5, Math.min(95, pct));
+    if (hasRealRoot.hour && pct < 15) pct = 15;
+    if (hasRealRoot.day && pct < 20) pct = 20;
+    
+    return { 
+        type, 
+        score: Math.round(score * 10) / 10, 
+        pct, 
+        factors, 
+        extreme, 
+        hourRoot: hasRealRoot.hour,
+        dayRoot: hasRealRoot.day,
+        disabledSeals,
+        disabledPeers
+    };
 }
 
 /* ========================================
@@ -2959,7 +3104,7 @@ function analyzeYukcheon(saju, gender) {
     if (!hourPillar) {
         childAnalysis = '시주가 없어서 자녀 분석이 어려워요.';
     } else if (childCount === 0) {
-        // [v26 FIX] Gemini 피드백: 무관성은 자녀뿐만 아니라 직업/성격도 영향
+        // [v27 FIX] Gemini 피드백: 무관성은 자녀뿐만 아니라 직업/성격도 영향
         childAnalysis = '자녀성(관성)이 없어요. 자녀가 늦거나 적을 수 있어요. 또한 조직 생활보다 자유로운 프리랜서나 전문직이 잘 맞아요. 규율보다 창의성으로 승부하세요!';
     } else if (childCount >= 2) {
         childAnalysis = '자녀성이 많아요. 자녀복이 있고 자녀가 많을 수 있어요.';
@@ -3112,7 +3257,7 @@ function checkSpecialFormat(saju, strength) {
         if (['편인','정인'].includes(god.k)) godCounts.in++;
     });
     
-    // [v26 FIX] Gemini 피드백: 식상이 강하면(투출+통근) 종격이 될 수 없음
+    // [v27 FIX] Gemini 피드백: 식상이 강하면(투출+통근) 종격이 될 수 없음
     const ybi = saju.year ? BRANCH.findIndex(b => b.c === saju.year.b.c) : -1;
     const hasSikSangWithRoot = saju.year && ['상관','식신'].includes(getTenGod(saju.year.s, saju.day.s)?.k) &&
         (ybi === 5 || ybi === 6); // 사, 오 (화의 왕지)
@@ -3902,7 +4047,7 @@ function calcInteractions(saju) {
     }
     
     // 충
-    // [v26 FIX] 왕지 충돌(자오충, 묘유충)은 무조건 강한 충으로 표시
+    // [v27 FIX] 왕지 충돌(자오충, 묘유충)은 무조건 강한 충으로 표시
     const wangjiChung = [[0,6,'자오충'],[3,9,'묘유충']]; // 왕지끼리의 충
     const clash = [
         [0,6,'자오충','수화상전(水火相戰)! 심혈관/신장 건강과 정신적 갈등에 주의하세요.'],
@@ -6208,7 +6353,7 @@ function copySajuForAI() {
         const age = currentYear - BIRTH_YEAR + 1;
         const ilju = getIljuDesc(SAJU.day.s, SAJU.day.b);
         
-        // [v26 FIX] 식상이 투출+통근하면 종격 불가 (Gemini 피드백)
+        // [v27 FIX] 식상이 투출+통근하면 종격 불가 (Gemini 피드백)
         const yearGodObj = getTenGod(SAJU.year.s, dm);
         const yearBranchIdx = BRANCH.findIndex(b => b.c === SAJU.year.b.c);
         const hasSikSangWithRoot = yearGodObj && ['상관','식신'].includes(yearGodObj.k) && 
