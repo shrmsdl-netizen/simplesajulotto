@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<!-- 🔒 사주로또 Pro v28.7 [PUBLIC] - 납음오행 계산공식 수정(60갑자인덱스기반) -->
+<!-- 🔒 사주로또 Pro v28.9 [PUBLIC] - 개운부적 데이터 오류 수정 -->
 <script>
 (function(){
     document.addEventListener('contextmenu',function(e){e.preventDefault();return false;});
@@ -663,6 +663,21 @@ footer.tab-footer.active { display: block; }
 .share-btn.copy-link:hover {
     background: rgba(253,216,53,0.2);
 }
+
+/* 부적 캔버스 스타일 */
+#talisman-canvas {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(212, 175, 55, 0.3);
+}
+#talisman-preview {
+    text-align: center;
+    padding: 15px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 15px;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+}
 </style>
 <!-- Kakao SDK -->
 <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" integrity="sha384-TiCUE00h649CAMonG018J2ujOgDKW/kVWlChEuu4jK2vxfAAD0eZxzCKakxg55G4" crossorigin="anonymous"></script>
@@ -1043,18 +1058,25 @@ footer.tab-footer.active { display: block; }
     <div class="share-section">
         <p class="share-title">✨ 이 앱이 마음에 드셨나요?</p>
         <p style="font-size:0.85rem;color:#aaa;margin-bottom:15px;line-height:1.6;">
-            천년 명리학의 지혜를 담은 사주 분석<br>
-            소중한 분들과 함께 나눠보세요
+            나만의 개운 부적을 만들어 보세요
         </p>
-        <div class="share-buttons">
-            <button class="share-btn kakao" onclick="shareKakao()">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 3C6.48 3 2 6.58 2 11c0 2.84 1.89 5.33 4.71 6.73-.15.54-.53 1.97-.61 2.27-.09.38.14.37.3.27.12-.07 1.93-1.31 2.71-1.84.62.09 1.26.14 1.89.14 5.52 0 10-3.58 10-8S17.52 3 12 3z"/>
-                </svg>
-                카카오톡 공유
-            </button>
-            <button class="share-btn copy-link" onclick="copyShareLink()">
-                🔗 링크 복사
+        
+        <!-- 부적 카드 미리보기 -->
+        <div id="talisman-preview" style="display:none;margin-bottom:20px;">
+            <canvas id="talisman-canvas" width="400" height="560"></canvas>
+            <div style="margin-top:15px;display:flex;gap:10px;justify-content:center;">
+                <button onclick="downloadTalisman()" style="padding:10px 20px;background:linear-gradient(135deg,#D4AF37,#B8860B);color:#1a1a1a;border:none;border-radius:20px;font-weight:600;cursor:pointer;">
+                    📥 저장
+                </button>
+                <button onclick="shareTalismanKakao()" style="padding:10px 20px;background:#FEE500;color:#3C1E1E;border:none;border-radius:20px;font-weight:600;cursor:pointer;">
+                    💬 공유
+                </button>
+            </div>
+        </div>
+        
+        <div id="talisman-btn-wrapper">
+            <button class="share-btn" onclick="generateTalisman()" style="background:linear-gradient(135deg,#8B0000,#DC143C);width:100%;">
+                🏮 개운부적 만들기
             </button>
         </div>
     </div>
@@ -1357,12 +1379,13 @@ let GENDER = 'm';
 let CALENDAR = 'solar';
 let SAJU = null;
 let GODS = null;
+let STRENGTH = null;  // 신강/신약 정보
 let BIRTH_YEAR = null;
 let currentNumbers = [];
 let history = [];
 
 /* ========================================
-   3-1. 카카오톡 공유 기능
+   3-1. 카카오톡 공유 기능 + 부적 카드 생성
    ======================================== */
 // 카카오 SDK 초기화 (실제 배포 시 JavaScript 키로 교체 필요)
 // https://developers.kakao.com 에서 앱 등록 후 JavaScript 키 발급
@@ -1379,41 +1402,305 @@ function initKakao() {
     }
 }
 
-function shareKakao() {
-    const shareData = {
-        title: '🍀 사주로또 Pro',
-        text: '천년 명리학의 지혜를 현대적으로 구현한 사주 분석 앱\n\n✨ 전문가 수준 사주팔자 분석\n💕 과학적 궁합 진단\n🍀 역대 당첨번호 제외 로또',
-        url: window.location.href
-    };
-    
-    // 1. Web Share API 지원 시 (모바일 브라우저)
-    if (navigator.share) {
-        navigator.share(shareData)
-            .then(() => toast('공유 완료! 🎉'))
-            .catch((err) => {
-                if (err.name !== 'AbortError') {
-                    copyShareLink();
-                }
-            });
+// 부적 카드용 전역 변수
+let talismanGenerated = false;
+let talismanDataUrl = null;
+
+// 세련된 부적 카드 생성
+function generateTalisman() {
+    if (!SAJU || !SAJU.day) {
+        toast('먼저 사주 분석을 해주세요! 🔮');
         return;
     }
     
-    // 2. 카카오 SDK 초기화된 경우
+    const canvas = document.getElementById('talisman-canvas');
+    const ctx = canvas.getContext('2d');
+    const W = 400, H = 560;
+    
+    // 배경 그라데이션 (검정 → 진한 빨강)
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+    bgGrad.addColorStop(0, '#1a0a0a');
+    bgGrad.addColorStop(0.5, '#2d0a0a');
+    bgGrad.addColorStop(1, '#1a0505');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
+    
+    // 테두리 (금색 이중선)
+    ctx.strokeStyle = '#8B7355';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(15, 15, W-30, H-30);
+    ctx.strokeStyle = '#D4AF37';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(20, 20, W-40, H-40);
+    
+    // 모서리 장식
+    drawCornerOrnaments(ctx, W, H);
+    
+    // 상단 문양 (태극 심볼)
+    drawTaegeuk(ctx, W/2, 65, 25);
+    
+    // 제목
+    ctx.fillStyle = '#D4AF37';
+    ctx.font = 'bold 22px "Noto Serif KR", serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('二〇二六 開運符', W/2, 120);
+    
+    // 부제목
+    ctx.fillStyle = '#B8860B';
+    ctx.font = '14px "Noto Sans KR", sans-serif';
+    ctx.fillText('2026년 개운 부적', W/2, 145);
+    
+    // 구분선
+    ctx.strokeStyle = '#8B7355';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(50, 165);
+    ctx.lineTo(W-50, 165);
+    ctx.stroke();
+    
+    // 일주 대형 표시
+    const dayStem = SAJU.day.s.c;
+    const dayBranch = SAJU.day.b.c;
+    ctx.fillStyle = '#FFD700';
+    ctx.font = 'bold 48px "Noto Serif KR", serif';
+    ctx.fillText(dayStem + dayBranch, W/2, 220);
+    
+    // 일주 설명
+    ctx.fillStyle = '#C0C0C0';
+    ctx.font = '14px "Noto Sans KR", sans-serif';
+    const iljuKey = dayStem + dayBranch;
+    const dayDesc = (typeof ILJU_60 !== 'undefined' && ILJU_60[iljuKey]) ? ILJU_60[iljuKey].name : '';
+    ctx.fillText(dayDesc + ' 일주', W/2, 250);
+    
+    // 중앙 정보 박스
+    ctx.fillStyle = 'rgba(139, 115, 85, 0.15)';
+    roundRect(ctx, 40, 270, W-80, 150, 10);
+    ctx.fill();
+    ctx.strokeStyle = '#8B7355';
+    ctx.lineWidth = 1;
+    roundRect(ctx, 40, 270, W-80, 150, 10);
+    ctx.stroke();
+    
+    // 용신/희신/기신 정보
+    ctx.textAlign = 'left';
+    ctx.font = '15px "Noto Sans KR", sans-serif';
+    
+    // GODS에서 yong, hee, gi는 오행 문자열 (예: 'fire', 'earth')
+    const yongsinEl = GODS && GODS.yong ? ELEMENT[GODS.yong] : {k:'?', emoji:''};
+    const huisinEl = GODS && GODS.hee ? ELEMENT[GODS.hee] : {k:'?', emoji:''};
+    const gisinEl = GODS && GODS.gi ? ELEMENT[GODS.gi] : {k:'?', emoji:''};
+    
+    ctx.fillStyle = '#FF6B6B';
+    ctx.fillText('用神', 60, 305);
+    ctx.fillStyle = '#FFD700';
+    ctx.fillText(`${yongsinEl.k} ${yongsinEl.emoji || ''}`, 110, 305);
+    
+    ctx.fillStyle = '#4ECDC4';
+    ctx.fillText('喜神', 220, 305);
+    ctx.fillStyle = '#FFD700';
+    ctx.fillText(`${huisinEl.k} ${huisinEl.emoji || ''}`, 270, 305);
+    
+    ctx.fillStyle = '#95A5A6';
+    ctx.fillText('忌神', 60, 340);
+    ctx.fillStyle = '#888';
+    ctx.fillText(`${gisinEl.k}`, 110, 340);
+    
+    // 대운 정보
+    ctx.fillStyle = '#B8860B';
+    ctx.fillText('日干', 220, 340);
+    ctx.fillStyle = '#FFD700';
+    ctx.font = 'bold 16px "Noto Serif KR", serif';
+    const dayElK = ELEMENT[SAJU.day.s.e].k;
+    ctx.fillText(`${SAJU.day.s.k}(${dayElK})`, 270, 342);
+    
+    // 신강/신약
+    ctx.font = '14px "Noto Sans KR", sans-serif';
+    ctx.fillStyle = '#B8860B';
+    ctx.fillText('身强弱', 60, 380);
+    ctx.fillStyle = '#FFD700';
+    const strType = STRENGTH ? (STRENGTH.type === 'strong' ? '신강' : STRENGTH.type === 'weak' ? '신약' : '중화') : '?';
+    const strPct = STRENGTH ? STRENGTH.pct + '%' : '';
+    ctx.fillText(`${strType} ${strPct}`, 130, 380);
+    
+    // 2026년 운세
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#D4AF37';
+    ctx.font = 'bold 16px "Noto Sans KR", sans-serif';
+    ctx.fillText('━━━  2026년 丙午年  ━━━', W/2, 450);
+    
+    // 월별 운세 계산
+    let bestMonth = '?', worstMonth = '?';
+    try {
+        const monthlyLuck = calcMonthlyLuck2026(SAJU, GODS);
+        if (monthlyLuck && monthlyLuck.best) bestMonth = monthlyLuck.best.month;
+        if (monthlyLuck && monthlyLuck.worst) worstMonth = monthlyLuck.worst.month;
+    } catch(e) {}
+    
+    // 좋은 달 / 조심할 달
+    ctx.font = '14px "Noto Sans KR", sans-serif';
+    ctx.fillStyle = '#4ECDC4';
+    ctx.fillText(`✨ 최고의 달: ${bestMonth}월`, W/2 - 70, 480);
+    ctx.fillStyle = '#FF6B6B';
+    ctx.fillText(`⚠️ 주의: ${worstMonth}월`, W/2 + 70, 480);
+    
+    // 하단 구분선
+    ctx.strokeStyle = '#8B7355';
+    ctx.beginPath();
+    ctx.moveTo(50, 505);
+    ctx.lineTo(W-50, 505);
+    ctx.stroke();
+    
+    // 하단 브랜딩
+    ctx.fillStyle = '#8B7355';
+    ctx.font = '12px "Noto Sans KR", sans-serif';
+    ctx.fillText('사주로또 Pro', W/2, 530);
+    
+    // 하단 문양
+    ctx.fillStyle = '#D4AF37';
+    ctx.font = '16px serif';
+    ctx.fillText('☯', W/2, 550);
+    
+    // 미리보기 표시
+    document.getElementById('talisman-preview').style.display = 'block';
+    document.getElementById('talisman-btn-wrapper').style.display = 'none';
+    talismanGenerated = true;
+    talismanDataUrl = canvas.toDataURL('image/png');
+    
+    toast('🏮 개운 부적이 생성되었습니다!');
+}
+
+// 태극 문양 그리기
+function drawTaegeuk(ctx, x, y, r) {
+    // 외곽 원
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.strokeStyle = '#D4AF37';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // 음양 심볼 (간략화)
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.8, 0, Math.PI, false);
+    ctx.fillStyle = '#C41E3A';
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.8, Math.PI, Math.PI * 2, false);
+    ctx.fillStyle = '#1E3A5F';
+    ctx.fill();
+    
+    // 작은 원들
+    ctx.beginPath();
+    ctx.arc(x - r * 0.35, y, r * 0.25, 0, Math.PI * 2);
+    ctx.fillStyle = '#1E3A5F';
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.arc(x + r * 0.35, y, r * 0.25, 0, Math.PI * 2);
+    ctx.fillStyle = '#C41E3A';
+    ctx.fill();
+}
+
+// 모서리 장식
+function drawCornerOrnaments(ctx, W, H) {
+    ctx.fillStyle = '#D4AF37';
+    ctx.font = '14px serif';
+    
+    // 네 모서리에 한자 배치
+    ctx.textAlign = 'center';
+    ctx.fillText('福', 35, 40);
+    ctx.fillText('祿', W-35, 40);
+    ctx.fillText('壽', 35, H-25);
+    ctx.fillText('喜', W-35, H-25);
+}
+
+// 둥근 사각형
+function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+}
+
+// 부적 이미지 다운로드
+function downloadTalisman() {
+    if (!talismanGenerated) {
+        generateTalisman();
+        if (!talismanGenerated) return;
+    }
+    
+    const link = document.createElement('a');
+    link.download = '2026_개운부적_사주로또.png';
+    link.href = talismanDataUrl;
+    link.click();
+    toast('📥 부적 이미지가 저장되었습니다!');
+}
+
+// 카카오톡으로 부적 공유
+function shareTalismanKakao() {
+    if (!talismanGenerated) {
+        generateTalisman();
+        if (!talismanGenerated) return;
+    }
+    
+    // Web Share API 지원 시 (모바일)
+    if (navigator.share && navigator.canShare) {
+        // Canvas를 Blob으로 변환
+        const canvas = document.getElementById('talisman-canvas');
+        canvas.toBlob(async (blob) => {
+            const file = new File([blob], '2026_개운부적.png', { type: 'image/png' });
+            const shareData = {
+                title: '🏮 2026년 개운 부적',
+                text: '사주로또 Pro에서 만든 나만의 개운 부적입니다!\n\n👉 나도 만들어보기:',
+                url: window.location.href,
+                files: [file]
+            };
+            
+            try {
+                if (navigator.canShare(shareData)) {
+                    await navigator.share(shareData);
+                    toast('공유 완료! 🎉');
+                    return;
+                }
+            } catch(e) {
+                if (e.name !== 'AbortError') {
+                    console.log('Share failed:', e);
+                }
+            }
+            // 실패시 폴백
+            shareKakaoFallback();
+        }, 'image/png');
+        return;
+    }
+    
+    // 폴백: 카카오 SDK 또는 링크 복사
+    shareKakaoFallback();
+}
+
+function shareKakaoFallback() {
+    // 카카오 SDK 사용
     if (typeof Kakao !== 'undefined' && Kakao.isInitialized()) {
         try {
             Kakao.Share.sendDefault({
                 objectType: 'feed',
                 content: {
-                    title: '🍀 사주로또 Pro',
-                    description: getShareText(),
-                    imageUrl: getShareImageUrl(),
+                    title: '🏮 2026년 개운 부적',
+                    description: '사주로또 Pro에서 만든 나만의 개운 부적! 당신의 용신과 2026년 운세를 확인하세요.',
+                    imageUrl: 'https://raw.githubusercontent.com/shrmsdl-netizen/simplesajulotto/main/talisman-preview.png',
                     link: {
                         mobileWebUrl: window.location.href,
                         webUrl: window.location.href
                     }
                 },
                 buttons: [{
-                    title: '나도 운세 보기',
+                    title: '나도 부적 만들기',
                     link: {
                         mobileWebUrl: window.location.href,
                         webUrl: window.location.href
@@ -1426,8 +1713,13 @@ function shareKakao() {
         }
     }
     
-    // 3. 폴백: 링크 복사
+    // 최종 폴백: 링크 복사
     copyShareLink();
+    toast('💡 부적 이미지는 [이미지 저장] 버튼으로 저장 후 직접 공유해주세요!');
+}
+
+function shareKakao() {
+    shareTalismanKakao();
 }
 
 function getShareText() {
@@ -6216,6 +6508,7 @@ function analyzeSaju() {
         // 1. 신강/신약 계산
         const str = calcStrength(SAJU);
         if (!str) { toast('신강/신약 계산 오류'); return; }
+        STRENGTH = str;  // 전역 저장
         
         // 2. 통합 분석 (삼합국, 한난조습, 용신 모두 연동)
         GODS = fullAnalysis(SAJU, str);
