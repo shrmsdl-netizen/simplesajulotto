@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<!-- 🔒 사주로또 Pro v28.9 [PUBLIC] - 개운부적 데이터 오류 수정 -->
+<!-- 🔒 사주로또 Pro v29.0 [PUBLIC] - 개운부적 용신맞춤 주문 + 액막이 문구 추가 -->
 <script>
 (function(){
     document.addEventListener('contextmenu',function(e){e.preventDefault();return false;});
@@ -1415,7 +1415,9 @@ function generateTalisman() {
     
     const canvas = document.getElementById('talisman-canvas');
     const ctx = canvas.getContext('2d');
-    const W = 400, H = 560;
+    const W = 400, H = 640;  // 높이 증가
+    canvas.width = W;
+    canvas.height = H;
     
     // 배경 그라데이션 (검정 → 진한 빨강)
     const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
@@ -1437,129 +1439,163 @@ function generateTalisman() {
     drawCornerOrnaments(ctx, W, H);
     
     // 상단 문양 (태극 심볼)
-    drawTaegeuk(ctx, W/2, 65, 25);
+    drawTaegeuk(ctx, W/2, 60, 22);
     
     // 제목
     ctx.fillStyle = '#D4AF37';
     ctx.font = 'bold 22px "Noto Serif KR", serif';
     ctx.textAlign = 'center';
-    ctx.fillText('二〇二六 開運符', W/2, 120);
+    ctx.fillText('二〇二六 開運符', W/2, 110);
     
     // 부제목
     ctx.fillStyle = '#B8860B';
-    ctx.font = '14px "Noto Sans KR", sans-serif';
-    ctx.fillText('2026년 개운 부적', W/2, 145);
+    ctx.font = '13px "Noto Sans KR", sans-serif';
+    ctx.fillText('2026년 개운 부적', W/2, 132);
     
     // 구분선
     ctx.strokeStyle = '#8B7355';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(50, 165);
-    ctx.lineTo(W-50, 165);
+    ctx.moveTo(50, 148);
+    ctx.lineTo(W-50, 148);
     ctx.stroke();
+    
+    // ★ 용신 기반 개운 문구 (한자)
+    const yongEl = GODS && GODS.yong ? GODS.yong : 'fire';
+    const yongsinMantras = {
+        'wood': { hanja: '木德生發 萬事亨通', meaning: '나무의 덕이 생발하여 만사형통' },
+        'fire': { hanja: '火德昌盛 光明大吉', meaning: '불의 덕이 창성하여 광명대길' },
+        'earth': { hanja: '土德厚載 財祿豊盈', meaning: '흙의 덕이 두터워 재록풍영' },
+        'metal': { hanja: '金德堅固 百事成就', meaning: '쇠의 덕이 견고하여 백사성취' },
+        'water': { hanja: '水德潤澤 智慧通達', meaning: '물의 덕이 윤택하여 지혜통달' }
+    };
+    const mantra = yongsinMantras[yongEl] || yongsinMantras['fire'];
+    
+    ctx.fillStyle = '#FFD700';
+    ctx.font = 'bold 20px "Noto Serif KR", serif';
+    ctx.fillText(mantra.hanja, W/2, 180);
+    
+    ctx.fillStyle = '#B8860B';
+    ctx.font = '11px "Noto Sans KR", sans-serif';
+    ctx.fillText(mantra.meaning, W/2, 200);
     
     // 일주 대형 표시
     const dayStem = SAJU.day.s.c;
     const dayBranch = SAJU.day.b.c;
     ctx.fillStyle = '#FFD700';
-    ctx.font = 'bold 48px "Noto Serif KR", serif';
-    ctx.fillText(dayStem + dayBranch, W/2, 220);
+    ctx.font = 'bold 44px "Noto Serif KR", serif';
+    ctx.fillText(dayStem + dayBranch, W/2, 260);
     
     // 일주 설명
     ctx.fillStyle = '#C0C0C0';
-    ctx.font = '14px "Noto Sans KR", sans-serif';
+    ctx.font = '13px "Noto Sans KR", sans-serif';
     const iljuKey = dayStem + dayBranch;
     const dayDesc = (typeof ILJU_60 !== 'undefined' && ILJU_60[iljuKey]) ? ILJU_60[iljuKey].name : '';
-    ctx.fillText(dayDesc + ' 일주', W/2, 250);
+    ctx.fillText(dayDesc + ' 일주', W/2, 285);
     
     // 중앙 정보 박스
     ctx.fillStyle = 'rgba(139, 115, 85, 0.15)';
-    roundRect(ctx, 40, 270, W-80, 150, 10);
+    roundRect(ctx, 40, 305, W-80, 130, 10);
     ctx.fill();
     ctx.strokeStyle = '#8B7355';
     ctx.lineWidth = 1;
-    roundRect(ctx, 40, 270, W-80, 150, 10);
+    roundRect(ctx, 40, 305, W-80, 130, 10);
     ctx.stroke();
     
     // 용신/희신/기신 정보
     ctx.textAlign = 'left';
-    ctx.font = '15px "Noto Sans KR", sans-serif';
+    ctx.font = '14px "Noto Sans KR", sans-serif';
     
-    // GODS에서 yong, hee, gi는 오행 문자열 (예: 'fire', 'earth')
     const yongsinEl = GODS && GODS.yong ? ELEMENT[GODS.yong] : {k:'?', emoji:''};
     const huisinEl = GODS && GODS.hee ? ELEMENT[GODS.hee] : {k:'?', emoji:''};
     const gisinEl = GODS && GODS.gi ? ELEMENT[GODS.gi] : {k:'?', emoji:''};
     
     ctx.fillStyle = '#FF6B6B';
-    ctx.fillText('用神', 60, 305);
+    ctx.fillText('用神', 60, 338);
     ctx.fillStyle = '#FFD700';
-    ctx.fillText(`${yongsinEl.k} ${yongsinEl.emoji || ''}`, 110, 305);
+    ctx.fillText(`${yongsinEl.k} ${yongsinEl.emoji || ''}`, 105, 338);
     
     ctx.fillStyle = '#4ECDC4';
-    ctx.fillText('喜神', 220, 305);
+    ctx.fillText('喜神', 170, 338);
     ctx.fillStyle = '#FFD700';
-    ctx.fillText(`${huisinEl.k} ${huisinEl.emoji || ''}`, 270, 305);
+    ctx.fillText(`${huisinEl.k} ${huisinEl.emoji || ''}`, 215, 338);
     
     ctx.fillStyle = '#95A5A6';
-    ctx.fillText('忌神', 60, 340);
+    ctx.fillText('忌神', 280, 338);
     ctx.fillStyle = '#888';
-    ctx.fillText(`${gisinEl.k}`, 110, 340);
+    ctx.fillText(`${gisinEl.k}`, 325, 338);
     
-    // 대운 정보
+    // 신강/신약 + 일간
     ctx.fillStyle = '#B8860B';
-    ctx.fillText('日干', 220, 340);
-    ctx.fillStyle = '#FFD700';
-    ctx.font = 'bold 16px "Noto Serif KR", serif';
-    const dayElK = ELEMENT[SAJU.day.s.e].k;
-    ctx.fillText(`${SAJU.day.s.k}(${dayElK})`, 270, 342);
-    
-    // 신강/신약
-    ctx.font = '14px "Noto Sans KR", sans-serif';
-    ctx.fillStyle = '#B8860B';
-    ctx.fillText('身强弱', 60, 380);
+    ctx.fillText('身', 60, 370);
     ctx.fillStyle = '#FFD700';
     const strType = STRENGTH ? (STRENGTH.type === 'strong' ? '신강' : STRENGTH.type === 'weak' ? '신약' : '중화') : '?';
     const strPct = STRENGTH ? STRENGTH.pct + '%' : '';
-    ctx.fillText(`${strType} ${strPct}`, 130, 380);
+    ctx.fillText(`${strType} ${strPct}`, 85, 370);
     
-    // 2026년 운세
+    ctx.fillStyle = '#B8860B';
+    ctx.fillText('日干', 170, 370);
+    ctx.fillStyle = '#FFD700';
+    const dayElK = ELEMENT[SAJU.day.s.e].k;
+    ctx.fillText(`${SAJU.day.s.k}(${dayElK})`, 210, 370);
+    
+    // 2026년 월별 운세
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#D4AF37';
-    ctx.font = 'bold 16px "Noto Sans KR", sans-serif';
-    ctx.fillText('━━━  2026년 丙午年  ━━━', W/2, 450);
+    ctx.fillStyle = '#B8860B';
+    ctx.font = '12px "Noto Sans KR", sans-serif';
+    ctx.fillText('─── 2026년 丙午年 ───', W/2, 410);
     
-    // 월별 운세 계산
     let bestMonth = '?', worstMonth = '?';
     try {
-        const monthlyLuck = calcMonthlyLuck2026(SAJU, GODS);
+        const monthlyLuck = getYearlyMonthLuck(2026, SAJU, GODS);
         if (monthlyLuck && monthlyLuck.best) bestMonth = monthlyLuck.best.month;
         if (monthlyLuck && monthlyLuck.worst) worstMonth = monthlyLuck.worst.month;
     } catch(e) {}
     
-    // 좋은 달 / 조심할 달
-    ctx.font = '14px "Noto Sans KR", sans-serif';
+    ctx.font = '13px "Noto Sans KR", sans-serif';
     ctx.fillStyle = '#4ECDC4';
-    ctx.fillText(`✨ 최고의 달: ${bestMonth}월`, W/2 - 70, 480);
+    ctx.fillText(`✨ 최고: ${bestMonth}월`, W/2 - 60, 432);
     ctx.fillStyle = '#FF6B6B';
-    ctx.fillText(`⚠️ 주의: ${worstMonth}월`, W/2 + 70, 480);
+    ctx.fillText(`⚠️ 주의: ${worstMonth}월`, W/2 + 60, 432);
     
-    // 하단 구분선
+    // ★ 하단 액막이 문구
     ctx.strokeStyle = '#8B7355';
     ctx.beginPath();
-    ctx.moveTo(50, 505);
-    ctx.lineTo(W-50, 505);
+    ctx.moveTo(50, 455);
+    ctx.lineTo(W-50, 455);
     ctx.stroke();
+    
+    ctx.fillStyle = '#D4AF37';
+    ctx.font = 'bold 18px "Noto Serif KR", serif';
+    ctx.fillText('厄退福來 百事大吉', W/2, 485);
+    
+    ctx.fillStyle = '#B8860B';
+    ctx.font = '11px "Noto Sans KR", sans-serif';
+    ctx.fillText('액은 물러가고 복이 오니 모든 일이 대길하리라', W/2, 505);
+    
+    // 구분선
+    ctx.strokeStyle = '#8B7355';
+    ctx.beginPath();
+    ctx.moveTo(80, 520);
+    ctx.lineTo(W-80, 520);
+    ctx.stroke();
+    
+    // 2026 특화 문구
+    ctx.fillStyle = '#C0C0C0';
+    ctx.font = '11px "Noto Sans KR", sans-serif';
+    ctx.fillText('丙午年 貴人相助 心想事成', W/2, 545);
     
     // 하단 브랜딩
     ctx.fillStyle = '#8B7355';
-    ctx.font = '12px "Noto Sans KR", sans-serif';
-    ctx.fillText('사주로또 Pro', W/2, 530);
+    ctx.font = '10px "Noto Sans KR", sans-serif';
+    ctx.fillText('사주로또 Pro ☯', W/2, 575);
     
-    // 하단 문양
-    ctx.fillStyle = '#D4AF37';
-    ctx.font = '16px serif';
-    ctx.fillText('☯', W/2, 550);
-    
+    // 하단 장식선
+    ctx.strokeStyle = 'rgba(212, 175, 55, 0.3)';
+    ctx.beginPath();
+    ctx.moveTo(120, 590);
+    ctx.lineTo(W-120, 590);
+    ctx.stroke();
     // 미리보기 표시
     document.getElementById('talisman-preview').style.display = 'block';
     document.getElementById('talisman-btn-wrapper').style.display = 'none';
