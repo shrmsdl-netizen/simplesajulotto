@@ -2,35 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<!-- 🔒 사주로또 Pro v31.6 - 배포용 (일주/월주/년주 정밀 계산) -->
-<script>
-(function(){
-    const _0x={
-        a:function(e){e.preventDefault();return false;},
-        b:function(e){
-            const k=e.key?.toLowerCase();
-            if(e.key==='F12'||
-               (e.ctrlKey&&['u','s','p'].includes(k))||
-               (e.ctrlKey&&e.shiftKey&&['i','j','c','k'].includes(k))||
-               (e.metaKey&&e.altKey&&['i','j','c'].includes(k))){
-                e.preventDefault();e.stopPropagation();return false;
-            }
-        },
-        c:function(e){if(!['INPUT','TEXTAREA'].includes(e.target.tagName))e.preventDefault();},
-        d:function(e){e.preventDefault();},
-        e:function(){
-            const t=170;const w=window.outerWidth-window.innerWidth>t;
-            const h=window.outerHeight-window.innerHeight>t;
-            if(w||h){document.body.innerHTML='<div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#1a1a2e;color:#FDD835;font-size:24px;font-family:serif;">🔒</div>';}
-        }
-    };
-    document.addEventListener('contextmenu',_0x.a);
-    document.addEventListener('keydown',_0x.b);
-    document.addEventListener('selectstart',_0x.c);
-    document.addEventListener('dragstart',_0x.d);
-    setInterval(_0x.e,2000);
-})();
-</script>
+<!-- 🔒 사주로또 Pro v31.7 [PUBLIC] - 배포용 - KASI 절기 검증 완료 -->
+<!-- 🔒 배포용: 프리미엄 잠금 -->
 
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>🍀 사주로또 Pro - 운명의 번호</title>
@@ -51,6 +24,30 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700;900&display=swap" rel="stylesheet">
+
+<!-- 🔒 Console Protection for PUBLIC Edition -->
+<script>
+(function() {
+    // 우클릭 방지
+    document.addEventListener('contextmenu', function(e) { e.preventDefault(); return false; });
+    
+    // 개발자 도구 단축키 차단
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'F12' || 
+            (e.ctrlKey && e.shiftKey && e.key === 'I') || 
+            (e.ctrlKey && e.shiftKey && e.key === 'J') || 
+            (e.ctrlKey && e.key === 'U')) {
+            e.preventDefault();
+            return false;
+        }
+    });
+    
+    // 콘솔 메시지
+    console.log('🔒 사주로또 Pro v31.7 [PUBLIC EDITION]');
+    console.log('© 2025 사주로또. All Rights Reserved.');
+})();
+</script>
+
 <style>
 /* ========================================
    CSS Variables & Reset
@@ -1541,7 +1538,7 @@ const SOLAR_TERMS = {
 2047:[[2,4,4,53],[3,5,22,8],[4,5,2,44],[5,5,15,12],[6,5,20,1],[7,7,6,54],[8,7,17,21],[9,7,21,46],[10,8,13,41],[11,7,16,53],[12,7,9,44],[1,6,15,3]],
 2048:[[2,4,10,37],[3,5,3,52],[4,4,8,29],[5,4,20,57],[6,5,1,47],[7,6,12,41],[8,6,23,8],[9,7,3,31],[10,7,19,26],[11,6,22,39],[12,6,15,30],[1,5,20,50]],
 2049:[[2,3,16,27],[3,5,9,43],[4,4,14,20],[5,5,2,47],[6,5,7,36],[7,6,18,29],[8,7,4,55],[9,7,9,19],[10,8,1,14],[11,7,4,27],[12,6,21,19],[1,6,2,39]],
-2050:[[2,3,22,17],[3,5,15,33],[4,4,20,9],[5,5,8,35],[6,5,13,24],[7,7,0,16],[8,7,10,43],[9,7,15,7],[10,8,7,2],[11,7,10,14],[12,7,3,6],[1,6,8,26]],
+2050:[[2,4,0,32],[3,5,17,49],[4,4,22,26],[5,5,10,53],[6,5,15,42],[7,7,2,34],[8,7,12,58],[9,7,17,12],[10,8,9,5],[11,7,12,11],[12,7,5,1],[1,6,10,15]],
 2051:[[2,4,4,3],[3,5,21,19],[4,5,1,56],[5,5,14,24],[6,5,19,14],[7,7,6,7],[8,7,16,35],[9,7,20,59],[10,8,12,54],[11,7,16,7],[12,7,8,58],[1,6,14,18]],
 2052:[[2,4,9,48],[3,5,3,4],[4,4,7,42],[5,4,20,9],[6,5,1,0],[7,6,11,53],[8,6,22,21],[9,7,2,45],[10,7,18,41],[11,6,21,53],[12,6,14,44],[1,5,20,3]],
 2053:[[2,3,15,38],[3,5,8,54],[4,4,13,31],[5,5,1,58],[6,5,6,47],[7,6,17,40],[8,7,4,8],[9,7,8,33],[10,8,0,29],[11,7,3,42],[12,6,20,34],[1,6,1,54]],
@@ -1631,9 +1628,9 @@ function initKakao() {
     if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {
         try {
             Kakao.init(KAKAO_KEY);
-            //console.log('Kakao SDK initialized');
+            console.log('Kakao SDK initialized');
         } catch(e) {
-            //console.log('Kakao init skipped (key not set)');
+            console.log('Kakao init skipped (key not set)');
         }
     }
 }
@@ -2109,7 +2106,7 @@ function shareTalismanKakao() {
                 }
             } catch(e) {
                 if (e.name !== 'AbortError') {
-                    //console.log('Share failed:', e);
+                    console.log('Share failed:', e);
                 }
             }
             // 실패시 폴백
@@ -2147,7 +2144,7 @@ function shareKakaoFallback() {
             });
             return;
         } catch(e) {
-            //console.error('Kakao share error:', e);
+            console.error('Kakao share error:', e);
         }
     }
     
@@ -2361,7 +2358,7 @@ function generateLotto() {
             }
         }, 50);
     } catch (error) {
-        //console.error('로또 생성 오류:', error);
+        console.error('로또 생성 오류:', error);
         toast('번호 생성 중 오류가 발생했습니다.');
     }
 }
@@ -2403,7 +2400,7 @@ function generateSajuLotto() {
         const yongCount = nums.filter(n => yongNums.includes(n)).length;
         toast(`용신(${ELEMENT[GODS.yong].k}) ${yongCount}개 포함!`);
     } catch (error) {
-        //console.error('사주 로또 생성 오류:', error);
+        console.error('사주 로또 생성 오류:', error);
         toast('번호 생성 중 오류가 발생했습니다.');
     }
 }
@@ -2419,7 +2416,7 @@ function generateSajuLotto() {
 function lunarToSolar(ly, lm, ld, isLeap = false) {
     // 유효 범위 체크 (1900-2049)
     if (ly < 1900 || ly > 2049) {
-        //console.warn('음력 변환: 지원 범위 외 연도', ly);
+        console.warn('음력 변환: 지원 범위 외 연도', ly);
         return null;
     }
     
@@ -5292,7 +5289,7 @@ function calcPreciseDaeunStart(saju, birthYear, birthMonth, birthDay, birthHour,
         };
         
     } catch (e) {
-        //console.warn('대운 계산 오류:', e);
+        console.warn('대운 계산 오류:', e);
     }
     
     return result;
@@ -7638,7 +7635,7 @@ function analyzeSaju() {
         
         toast('사주 분석 완료!');
     } catch (error) {
-        //console.error('사주 분석 오류:', error);
+        console.error('사주 분석 오류:', error);
         toast('분석 중 오류가 발생했습니다. 입력값을 확인해주세요.');
     }
 }
@@ -8240,7 +8237,7 @@ function renderSaju(str) {
     // 통변 초기화
     renderFortune('total');
     } catch (error) {
-        //console.error('사주 렌더링 오류:', error);
+        console.error('사주 렌더링 오류:', error);
         toast('결과 표시 중 오류가 발생했습니다.');
     }
 }
@@ -9414,7 +9411,7 @@ ${monthText}
             toast('📋 복사 완료!');
         });
     } catch(err) {
-        //console.error('복사 오류:', err);
+        console.error('복사 오류:', err);
         toast('복사 중 오류가 발생했습니다');
     }
 }
@@ -10344,7 +10341,7 @@ function analyzeMatch() {
         myGongmang, pGongmang  // [v31.3] 공망
     };
     } catch (error) {
-        //console.error('궁합 분석 오류:', error);
+        console.error('궁합 분석 오류:', error);
         toast('궁합 분석 중 오류가 발생했습니다.');
     }
 }
