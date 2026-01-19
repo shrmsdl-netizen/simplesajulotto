@@ -719,7 +719,123 @@ footer.tab-footer.active { display: block; }
     animation: pulse 1.5s infinite;
 }
 
-
+/* ========================================
+   Zodiac Wheel Roulette
+   ======================================== */
+.zodiac-wheel-container {
+    display: none;
+    text-align: center;
+    margin: 20px auto;
+    padding: 20px;
+}
+.zodiac-wheel-container.show {
+    display: block;
+}
+.wheel-wrapper {
+    position: relative;
+    width: 280px;
+    height: 280px;
+    margin: 0 auto 15px;
+    border-radius: 50%;
+    box-shadow: 
+        0 8px 25px rgba(0,0,0,0.3),
+        0 0 0 3px var(--gold),
+        0 0 20px rgba(212,175,55,0.3);
+}
+.wheel-wrapper::after {
+    content: '▼';
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 24px;
+    color: var(--red);
+    z-index: 10;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+.wheel-glow {
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    right: -8px;
+    bottom: -8px;
+    border-radius: 50%;
+    background: conic-gradient(
+        from 0deg,
+        transparent,
+        rgba(212,175,55,0.5),
+        transparent,
+        rgba(212,175,55,0.5),
+        transparent
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+}
+.wheel-glow.active {
+    opacity: 1;
+    animation: wheelGlowRotate 0.8s linear infinite;
+}
+@keyframes wheelGlowRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+#zodiacWheel {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    transition: transform 1.5s cubic-bezier(0.15, 0.6, 0.2, 1);
+}
+.sparkle-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    background: 
+        radial-gradient(circle at 25% 25%, rgba(255,255,255,0.5) 0%, transparent 20%),
+        radial-gradient(circle at 75% 30%, rgba(255,255,255,0.3) 0%, transparent 15%);
+}
+.sparkle-overlay.active {
+    opacity: 1;
+    animation: wheelSparkle 0.15s ease-in-out infinite alternate;
+}
+@keyframes wheelSparkle {
+    0% { 
+        background: 
+            radial-gradient(circle at 25% 25%, rgba(255,255,255,0.5) 0%, transparent 20%),
+            radial-gradient(circle at 75% 30%, rgba(255,255,255,0.3) 0%, transparent 15%);
+    }
+    100% { 
+        background: 
+            radial-gradient(circle at 30% 30%, rgba(255,255,255,0.6) 0%, transparent 25%),
+            radial-gradient(circle at 70% 25%, rgba(255,255,255,0.4) 0%, transparent 20%);
+    }
+}
+.zodiac-result-text {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: var(--gold);
+    min-height: 1.5em;
+    opacity: 0;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    transform: translateY(10px);
+}
+.zodiac-result-text.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+.zodiac-loading {
+    display: none;
+    color: var(--red);
+    font-weight: 500;
+}
+.zodiac-loading.show {
+    display: block;
 }
 </style>
 <!-- Kakao SDK -->
@@ -1161,6 +1277,17 @@ footer.tab-footer.active { display: block; }
             <p style="font-size:0.8rem;color:#888;margin-top:12px;">💡 이미지를 저장한 후 휴대폰 배경화면으로 설정하세요!</p>
         </div>
         
+        <!-- 띠 룰렛 영역 (부적 생성시에만 표시) -->
+        <div id="zodiac-wheel-container" class="zodiac-wheel-container">
+            <div class="wheel-wrapper">
+                <div class="wheel-glow" id="wheelGlow"></div>
+                <img id="zodiacWheel" src="zodiac-wheel.png" alt="십이지신 휠">
+                <div class="sparkle-overlay" id="sparkleOverlay"></div>
+            </div>
+            <div class="zodiac-loading" id="zodiacLoading">✦ 운명의 띠 탐색중... ✦</div>
+            <div class="zodiac-result-text" id="zodiacResultText"></div>
+        </div>
+        
         <div id="talisman-btn-wrapper">
             <button class="share-btn" onclick="generateTalisman()" style="background:linear-gradient(135deg,#8B0000,#DC143C);width:100%;padding:18px;font-size:1.1rem;text-align:center;display:flex;justify-content:center;align-items:center;">
                 🏮 고해상도 개운부적 만들기 🏮
@@ -1206,6 +1333,7 @@ footer.tab-footer.active { display: block; }
     <p style="font-size:11px;opacity:0.6;">⚠️ 로또는 오락입니다. 과도한 구매는 삼가세요.</p>
     <p style="font-size:10px;opacity:0.4;margin-top:5px;">본 사이트는 당첨을 보장하지 않습니다.</p>
     <p style="margin-top:15px;opacity:0.4;font-size:10px;">🔒 광고 없는 청정 공간 · © 2026 사주로또 Pro</p>
+    <p style="opacity:0.4;font-size:10px;">사업자등록번호: 487-20-02668</p>
 </footer>
 
 <footer id="footer-saju" class="tab-footer active">
@@ -1223,6 +1351,7 @@ footer.tab-footer.active { display: block; }
     </div>
     <p style="font-size:11px;opacity:0.5;">🔒 일체의 광고 없이 순수한 학문적 탐구(學問的 探究)만을 추구합니다</p>
     <p style="margin-top:10px;opacity:0.4;font-size:10px;">© 2026 사주로또 Pro · 命理硏究所</p>
+    <p style="opacity:0.4;font-size:10px;">사업자등록번호: 487-20-02668</p>
 </footer>
 
 <footer id="footer-match" class="tab-footer">
@@ -1239,6 +1368,7 @@ footer.tab-footer.active { display: block; }
     </div>
     <p style="font-size:11px;opacity:0.5;">🔒 광고 없는 청정 공간(淸淨 空間)</p>
     <p style="margin-top:10px;opacity:0.4;font-size:10px;">© 2026 사주로또 Pro · 姻緣硏究</p>
+    <p style="opacity:0.4;font-size:10px;">사업자등록번호: 487-20-02668</p>
 </footer>
 
 <script>
@@ -1658,6 +1788,15 @@ function generateTalisman() {
         return;
     }
     
+    // ★ 띠 룰렛 먼저 돌리기 (연지 기준)
+    const yearBranchIdx = BRANCH.findIndex(b => b.c === SAJU.year.b.c);
+    spinZodiacWheel(yearBranchIdx, function() {
+        // 룰렛 완료 후 부적 생성
+        startTalismanGeneration();
+    });
+}
+
+function startTalismanGeneration() {
     // [v31.0] 의식 애니메이션 시작
     const overlay = document.getElementById('talisman-ritual-overlay');
     if (overlay) {
@@ -2386,6 +2525,7 @@ function generateSajuLotto() {
         const heeNums = ELEMENT[GODS.hee]?.nums || [];
         const giNums = ELEMENT[GODS.gi]?.nums || [];
         
+        // 가중치 풀 생성
         let weightedPool = [];
         for (let i = 1; i <= 45; i++) {
             let weight = 1;
@@ -2395,11 +2535,26 @@ function generateSajuLotto() {
             for (let j = 0; j < weight * 2; j++) weightedPool.push(i);
         }
         
+        // 오늘 날짜 (고정 번호를 위해)
+        const today = new Date();
+        const todayStr = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
+        
+        // seed: 생년월일 + 용신 + 희신 + 오늘날짜 → 같은 날 같은 사주는 같은 번호
+        const seed = `${BIRTH_YEAR}-${BIRTH_MONTH}-${BIRTH_DAY}-${GODS.yong}-${GODS.hee}-${todayStr}`;
+        let hash = 0;
+        for (let i = 0; i < seed.length; i++) {
+            hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+            hash = hash & hash;
+        }
+        
+        // deterministic 번호 생성
         let nums = [], attempts = 0;
         do {
             const selected = new Set();
+            let tempHash = hash + attempts;
             while (selected.size < 6) {
-                const idx = Math.floor(Math.random() * weightedPool.length);
+                tempHash = Math.abs((tempHash * 1103515245 + 12345) & 0x7fffffff);
+                const idx = tempHash % weightedPool.length;
                 selected.add(weightedPool[idx]);
             }
             nums = [...selected].sort((a, b) => a - b);
@@ -2410,7 +2565,7 @@ function generateSajuLotto() {
         container.innerHTML = nums.map(n => createBall(n)).join('');
         
         const yongCount = nums.filter(n => yongNums.includes(n)).length;
-        toast(`용신(${ELEMENT[GODS.yong].k}) ${yongCount}개 포함!`);
+        toast(`🔮 오늘의 운명 번호 (용신 ${ELEMENT[GODS.yong].k} ${yongCount}개)`);
     } catch (error) {
         console.error('사주 로또 생성 오류:', error);
         toast('번호 생성 중 오류가 발생했습니다.');
@@ -7583,6 +7738,58 @@ function runMatch() {
             <p><strong>💡 궁합 팁</strong></p>
             <p style="margin-top:8px;">${score >= 65 ? '서로의 장점을 칭찬해주세요!' : score >= 50 ? '서로 다른 점을 인정하고 존중하세요.' : '대화를 많이 하세요. 서로의 공간도 존중해주세요.'}</p>
         </div>`;
+}
+
+/* ========================================
+   14.5. 띠 룰렛 애니메이션
+   ======================================== */
+let wheelRotation = 0;
+let isWheelSpinning = false;
+
+function spinZodiacWheel(targetIndex, callback) {
+    if (isWheelSpinning) return;
+    isWheelSpinning = true;
+    
+    const container = document.getElementById('zodiac-wheel-container');
+    const wheel = document.getElementById('zodiacWheel');
+    const glow = document.getElementById('wheelGlow');
+    const sparkle = document.getElementById('sparkleOverlay');
+    const loading = document.getElementById('zodiacLoading');
+    const resultText = document.getElementById('zodiacResultText');
+    
+    // UI 표시
+    container.style.display = 'block';
+    resultText.style.opacity = '0';
+    resultText.textContent = '';
+    loading.style.display = 'block';
+    glow.classList.add('active');
+    sparkle.classList.add('active');
+    
+    // ★ 시계방향 2바퀴 + 정확한 띠 중앙에 멈춤
+    const targetPos = ((12 - targetIndex) % 12) * 30 + 15;
+    const currentPos = wheelRotation % 360;
+    let diff = targetPos - currentPos;
+    if (diff <= 0) diff += 360;
+    wheelRotation = wheelRotation + 720 + diff;
+    
+    // ★ 핵심: display 변경 후 약간 딜레이 줘야 transition 작동!
+    setTimeout(() => {
+        wheel.style.transform = `rotate(${wheelRotation}deg)`;
+    }, 50);
+    
+    // 1.5초 후 결과
+    setTimeout(() => {
+        loading.style.display = 'none';
+        glow.classList.remove('active');
+        sparkle.classList.remove('active');
+        
+        const animal = BRANCH[targetIndex];
+        resultText.textContent = `✨ ${animal.a}띠 (${animal.c}) ✨`;
+        resultText.style.opacity = '1';
+        
+        isWheelSpinning = false;
+        if (callback) callback();
+    }, 1550);
 }
 
 /* ========================================
