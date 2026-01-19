@@ -1757,6 +1757,8 @@ let BIRTH_YEAR = null;
 let BIRTH_MONTH = null;  // v31.0: 대운 정밀 계산용
 let BIRTH_DAY = null;    // v31.0: 대운 정밀 계산용
 let BIRTH_HOUR = null;   // v31.0: 대운 정밀 계산용
+let INPUT_HOUR_BRANCH_IDX = null;    // v31.9: 보정 전 시(時) 인덱스
+let ADJUSTED_HOUR_BRANCH_IDX = null; // v31.9: 보정 후 시(時) 인덱스
 // v31.9: 음력 입력 시 원래 값 저장 (표시용)
 let ORIGINAL_LUNAR_YEAR = null;
 let ORIGINAL_LUNAR_MONTH = null;
@@ -7848,6 +7850,9 @@ function analyzeSaju() {
         BIRTH_MONTH = sm;  // v31.0: 양력 월 저장 (대운 정밀 계산용)
         BIRTH_DAY = sd;    // v31.0: 양력 일 저장 (대운 정밀 계산용)
         BIRTH_HOUR = h;    // v31.0: 시간 저장 (대운 정밀 계산용)
+        // [v31.9 NEW] 보정 전/후 시간 저장 (AI 프롬프트 표시용)
+        INPUT_HOUR_BRANCH_IDX = h;     // 사용자 입력 시(時) 인덱스
+        ADJUSTED_HOUR_BRANCH_IDX = adj.h;  // 보정 후 시(時) 인덱스
         
         // ★★★ [v28] 통합 분석 파이프라인 ★★★
         // 1. 신강/신약 계산
@@ -9168,6 +9173,15 @@ function copySajuForAI() {
             correctionInfo.push('야자시 방식');
         } else {
             correctionInfo.push('조자시 방식');
+        }
+        // [v31.9 NEW] 보정 전/후 시(時)가 다른 경우 명시
+        if (INPUT_HOUR_BRANCH_IDX !== null && ADJUSTED_HOUR_BRANCH_IDX !== null && 
+            INPUT_HOUR_BRANCH_IDX >= 0 && INPUT_HOUR_BRANCH_IDX !== ADJUSTED_HOUR_BRANCH_IDX) {
+            const inputBranch = BRANCH[INPUT_HOUR_BRANCH_IDX]?.k || '';
+            const adjustedBranch = BRANCH[ADJUSTED_HOUR_BRANCH_IDX]?.k || '';
+            if (inputBranch && adjustedBranch) {
+                correctionInfo.push(`입력 ${inputBranch}시 → 보정 후 ${adjustedBranch}시`);
+            }
         }
         const correctionText = correctionInfo.length > 0 ? `\n• 시간보정: ${correctionInfo.join(', ')}` : '';
         
