@@ -2,8 +2,53 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<!-- 🔒 사주로또 Pro v31.9 [PUBLIC] - 배포용 - 54개 AI Rules -->
-<!-- 🔒 배포용: 프리미엄 잠금 -->
+<!--
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║  🍀 사주로또 Pro v32.1 [PUBLIC] - 배포용                                      ║
+║  전문가 수준 사주팔자 분석 & 로또 번호 생성기                                 ║
+║                                                                                ║
+║  🆓 FREE EDITION - 모든 기능 무료                                             ║
+║  🔒 Basic Security Enabled (DevTools, Right-click disabled)                   ║
+║                                                                                ║
+╠═══════════════════════════════════════════════════════════════════════════════╣
+║  📋 CODE MAP (K-MUDANG과 공유)                                                ║
+╠═══════════════════════════════════════════════════════════════════════════════╣
+║  [SHARED] 공통 코드 (106개 함수) - K-MUDANG과 동기화 필수                     ║
+║    • 데이터: STEM, BRANCH, TEN_GODS, ELEMENT, JIJANGGAN, TWELVE_STATES       ║
+║    • 계산: calcYearPillar, calcMonthPillar, calcDayPillar, calcHourPillar    ║
+║    • 분석: calcStrength, calcGods, calcFormat, calcLuck, calcYearLuck        ║
+║    • 십신: getTenGod, getTwelveState, getBranchYang (v32.1)                  ║
+║    • 신살: calcGongmang, calcSinsal, analyzeJijanggan                        ║
+║    • 합충: analyzeAdvancedInteractions, analyzeSamhapBureau                  ║
+║    • 통변: analyzeClimate, analyzeHealth, analyzeYukChinRon                  ║
+║                                                                                ║
+║  [UNIQUE] 사주로또 전용 코드                                                  ║
+║    • 궁합: analyzeMatch, copyMatchForAI, fullAnalysis                        ║
+║    • 공유: shareKakaoFallback, shareTalismanKakao, saveImage                 ║
+║    • 시간: correctTimeToSolarTime, isBeforeSolarTerm, isInSummerTime         ║
+║    • UI: showDaeunTab, startTalismanGeneration                               ║
+║                                                                                ║
+╠═══════════════════════════════════════════════════════════════════════════════╣
+║  📝 VERSION HISTORY                                                           ║
+╠═══════════════════════════════════════════════════════════════════════════════╣
+║  v32.1 (2026-01-21):                                                          ║
+║    - [NEW] 지지 십신 계산 기능 추가 (getBranchYang 함수)                      ║
+║    - [NEW] 십신 매핑표 추가 (AI 필수 참조)                                    ║
+║    - [NEW] 대운/세운 십신 [천간/지지] 표시                                    ║
+║    - [NEW] 삼합국(三合局) 상세 분석 추가                                      ║
+║    - [NEW] 득령/실령 섹션 추가                                                ║
+║    - [NEW] CRITICAL AI INSTRUCTIONS 섹션                                      ║
+║    - Total: 54개 AI Rules                                                     ║
+║                                                                                ║
+║  v32.0 (2026-01-20):                                                          ║
+║    - [FIX] 조후용신 통관(Bridge) 전략 적용                                    ║
+║    - [FIX] 신강도 계산: 12운성 점수 추가                                      ║
+║                                                                                ║
+║  Business: 사주로또 | Registration: 487-20-02668                              ║
+║  Contact: kmudang.official@gmail.com                                          ║
+║  Last Updated: 2026-01-21                                                     ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+-->
 
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>🍀 사주로또 Pro - 운명의 번호</title>
@@ -43,7 +88,7 @@
     });
     
     // 콘솔 메시지
-    console.log('🔒 사주로또 Pro v31.9 [PUBLIC EDITION]');
+    console.log('🔒 사주로또 Pro v32.1 [PUBLIC EDITION]');
     console.log('© 2025 사주로또. All Rights Reserved.');
 })();
 </script>
@@ -1010,8 +1055,7 @@ footer.tab-footer.active { display: block; }
         <p style="font-size:0.85rem;color:#aaa;margin-top:10px;text-align:center;line-height:1.6;">
             💡 분석 후 하단의 <strong style="color:#D4AF37;">AI 프롬프트 복사</strong> 버튼을 눌러<br>
             Gemini, ChatGPT 등에 붙여넣으면<br>
-            <strong style="color:#FFD700;">정확한 사주 데이터 기반의 전문가 수준 서술형 풀이</strong>를 받을 수 있습니다.<br>
-            <span style="font-size:0.75rem;color:#8B7355;margin-top:6px;display:inline-block;">📜 본 기술은 특허 출원 중입니다 (출원번호: 10-2026-0010452)</span>
+            <strong style="color:#FFD700;">정확한 사주 데이터 기반의 전문가 수준 서술형 풀이</strong>를 받을 수 있습니다.
         </p>
     </div>
     
@@ -1396,6 +1440,14 @@ const PAST_WINNERS = [
 ];
 const PAST_SET = new Set(PAST_WINNERS.map(arr => [...arr].sort((a,b)=>a-b).join(',')));
 
+/* ═══════════════════════════════════════════════════════════════════════════════
+   🔄 SHARED CODE SECTION - K-MUDANG과 동기화 필수
+   ═══════════════════════════════════════════════════════════════════════════════
+   이 섹션의 코드를 수정할 경우 K-MUDANG (k_index.html)에도 동일하게 적용해야 합니다.
+   공통 데이터: STEM, BRANCH, TEN_GODS, ELEMENT, JIJANGGAN, TWELVE_STATES
+   공통 함수: getTenGod, getTwelveState, calcStrength, calcGods, calcFormat, calcLuck
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
 // 천간(天干)
 const STEM = [
     {c:'甲',k:'갑',e:'wood',y:true},{c:'乙',k:'을',e:'wood',y:false},
@@ -1757,9 +1809,7 @@ let BIRTH_YEAR = null;
 let BIRTH_MONTH = null;  // v31.0: 대운 정밀 계산용
 let BIRTH_DAY = null;    // v31.0: 대운 정밀 계산용
 let BIRTH_HOUR = null;   // v31.0: 대운 정밀 계산용
-let INPUT_HOUR_BRANCH_IDX = null;    // v31.9: 보정 전 시(時) 인덱스
-let ADJUSTED_HOUR_BRANCH_IDX = null; // v31.9: 보정 후 시(時) 인덱스
-// v31.9: 음력 입력 시 원래 값 저장 (표시용)
+// v32.1: 음력 입력 시 원래 값 저장 (표시용)
 let ORIGINAL_LUNAR_YEAR = null;
 let ORIGINAL_LUNAR_MONTH = null;
 let ORIGINAL_LUNAR_DAY = null;
@@ -3030,8 +3080,10 @@ function calcDayPillar(y, m, d) {
     // [v31.6 FIX] 올바른 기준점으로 수정
     // 2000/1/1 = 壬申일 (나무위키, 신뢰할 수 있는 만세력 검증 완료)
     // JDN(2000/1/1) = 2451545, 壬申 = idx60=8
-    // 따라서 baseJdn = 2451545 - 8 = 2451537
-    const baseJdn = 2451537;
+    // v31.10 FIX: KASI 천문연구원 데이터 검증 기준일
+    // 1984년 1월 31일 = 甲子일 (JDN=2445731)
+    // 검증: 2026-01-01 = 乙亥 (KASI 공식 데이터와 일치)
+    const baseJdn = 2445731;
     const idx60 = ((jdn - baseJdn) % 60 + 60) % 60;
     return { s: STEM[idx60 % 10], b: BRANCH[idx60 % 12] };
 }
@@ -3204,6 +3256,7 @@ function analyzeTonggeunTougan(saju) {
 
 /* ----------------------------------------
    9-3. 십신 상세 분석
+   🔄 SYNC: K-MUDANG과 동기화 필수
    ---------------------------------------- */
 function getTenGod(stem, dayStem) {
     const dEl = EL_ORDER.indexOf(dayStem.e);
@@ -3609,8 +3662,8 @@ function calcStrength(saju) {
     const officerEl = EL_ORDER[(EL_ORDER.indexOf(dme) + 3) % 5]; // 관성 (나를 극함)
     const myEls = [peerEl, sealEl];
     
-    // ====== 지장간 테이블 (v4.13.0 표준 - 여기/중기/정기 완전판) ======
-    // K-MUDANG v4.13.0에서 이식: 12지지 전체 오차 0% 수정
+    // ====== 지장간 테이블 (v4.17.1 표준 - 午 지장간 수정) ======
+    // K-MUDANG v4.17.1에서 이식: 午 지장간 丙/己 일수 교차검증 수정
     const JIJANGGAN_W = {
         0: [{s:8, w:0.33}, {s:9, w:0.67}],                   // 子: 壬(여기), 癸(정기)
         1: [{s:9, w:0.3}, {s:7, w:0.1}, {s:5, w:0.6}],      // 丑: 癸, 辛, 己
@@ -3618,7 +3671,7 @@ function calcStrength(saju) {
         3: [{s:0, w:0.33}, {s:1, w:0.67}],                   // 卯: 甲(여기), 乙(정기)
         4: [{s:1, w:0.3}, {s:9, w:0.1}, {s:4, w:0.6}],      // 辰: 乙, 癸(水根!), 戊
         5: [{s:4, w:0.23}, {s:6, w:0.23}, {s:2, w:0.54}],   // 巳: 戊, 庚, 丙
-        6: [{s:2, w:0.33}, {s:5, w:0.3}, {s:3, w:0.37}],    // 午: 丙(여기), 己, 丁
+        6: [{s:2, w:0.3}, {s:5, w:0.33}, {s:3, w:0.37}],    // 午: 丙9日(여기), 己10日, 丁11日 (v4.17.1 FIX)
         7: [{s:3, w:0.3}, {s:1, w:0.1}, {s:5, w:0.6}],      // 未: 丁, 乙, 己
         8: [{s:4, w:0.23}, {s:8, w:0.23}, {s:6, w:0.54}],   // 申: 戊, 壬(水根!), 庚
         9: [{s:6, w:0.33}, {s:7, w:0.67}],                   // 酉: 庚(여기), 辛(정기)
@@ -7816,7 +7869,7 @@ function analyzeSaju() {
         if (d < 1 || d > 31) { toast('일은 1~31 사이로 입력하세요'); return; }
         
         let sy = y, sm = m, sd = d;
-        // v31.9: 음력 입력 시 원래 값 저장 (표시용)
+        // v32.1: 음력 입력 시 원래 값 저장 (표시용)
         if (CALENDAR === 'lunar') {
             ORIGINAL_LUNAR_YEAR = y;
             ORIGINAL_LUNAR_MONTH = m;
@@ -7846,13 +7899,10 @@ function analyzeSaju() {
             return; 
         }
         
-        BIRTH_YEAR = sy;  // [v31.9 FIX] 양력 변환된 연도 사용
+        BIRTH_YEAR = y;
         BIRTH_MONTH = sm;  // v31.0: 양력 월 저장 (대운 정밀 계산용)
         BIRTH_DAY = sd;    // v31.0: 양력 일 저장 (대운 정밀 계산용)
         BIRTH_HOUR = h;    // v31.0: 시간 저장 (대운 정밀 계산용)
-        // [v31.9 NEW] 보정 전/후 시간 저장 (AI 프롬프트 표시용)
-        INPUT_HOUR_BRANCH_IDX = h;     // 사용자 입력 시(時) 인덱스
-        ADJUSTED_HOUR_BRANCH_IDX = adj.h;  // 보정 후 시(時) 인덱스
         
         // ★★★ [v28] 통합 분석 파이프라인 ★★★
         // 1. 신강/신약 계산
@@ -8858,9 +8908,17 @@ function showTodayFortune() {
     document.getElementById('today-fortune-content').innerHTML = getTodayFortune();
 }
 
-/* ========================================
-   AI 해석용 복사 기능
-   ======================================== */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   📋 AI PROMPT GENERATION - K-MUDANG과 프롬프트 구조 동기화 필수
+   ═══════════════════════════════════════════════════════════════════════════════
+   프롬프트 섹션 순서:
+   1. 기본 정보 → 사주 원국 → 십신(천간/지지) → 십신 매핑표
+   2. 12운성 → 득령/실령 → 오행 분포 → 신강/신약
+   3. 용신 → 격국 → 일주론 → 지장간 → 납음 → 명궁 → 태원
+   4. 통근/투간 → 육친 → 궁위 → 합충형파해 → 방합 → 암합 → 삼합국 → 공망 → 신살
+   5. 대운(방향+십신) → 현재운 → 향후10년 → 월별운세
+   6. AI 지침들
+   ═══════════════════════════════════════════════════════════════════════════════ */
 function copySajuForAI() {
     if (!SAJU) { toast('먼저 사주를 분석해주세요'); return; }
     
@@ -8896,6 +8954,45 @@ function copySajuForAI() {
         const yearGod = getTenGod(SAJU.year.s, dm);
         const monthGod = getTenGod(SAJU.month.s, dm);
         const hourGod = SAJU.hour ? getTenGod(SAJU.hour.s, dm) : null;
+        
+        // v32.1 FIX: 지지 십신 계산 - 음양 정보 올바르게 전달
+        // 지지 음양 규칙: 짝수 인덱스(子寅辰午申戌)=양, 홀수 인덱스(丑卯巳未酉亥)=음
+        const getBranchYang = (branch) => {
+            const idx = BRANCH.findIndex(b => b.c === branch.c);
+            return idx % 2 === 0;
+        };
+        const yearBranchYang = getBranchYang(SAJU.year.b) ? '陽' : '陰';
+        const monthBranchYang = getBranchYang(SAJU.month.b) ? '陽' : '陰';
+        const dayBranchYang = getBranchYang(SAJU.day.b) ? '陽' : '陰';
+        const hourBranchYang = SAJU.hour ? (getBranchYang(SAJU.hour.b) ? '陽' : '陰') : '';
+        const yearBranchGod = getTenGod({e: SAJU.year.b.e, y: getBranchYang(SAJU.year.b)}, dm);
+        const monthBranchGod = getTenGod({e: SAJU.month.b.e, y: getBranchYang(SAJU.month.b)}, dm);
+        const dayBranchGod = getTenGod({e: SAJU.day.b.e, y: getBranchYang(SAJU.day.b)}, dm);
+        const hourBranchGod = SAJU.hour ? getTenGod({e: SAJU.hour.b.e, y: getBranchYang(SAJU.hour.b)}, dm) : null;
+        // v4.17.2: 십신 매핑 테이블 생성
+        const dmEl = dm.e;
+        const elOrder = ['wood', 'fire', 'earth', 'metal', 'water'];
+        const dmIdx = elOrder.indexOf(dmEl);
+        const tenGodMap = {
+            peer: elOrder[dmIdx],
+            output: elOrder[(dmIdx + 1) % 5],
+            wealth: elOrder[(dmIdx + 2) % 5],
+            officer: elOrder[(dmIdx + 3) % 5],
+            seal: elOrder[(dmIdx + 4) % 5]
+        };
+        
+        // v4.17.2: 득령/실령 계산
+        const mbi = BRANCH.findIndex(br => br.c === SAJU.month.b.c);
+        const seasonMap = {0:'겨울',1:'토왕',2:'봄',3:'봄',4:'토왕',5:'여름',6:'여름',7:'토왕',8:'가을',9:'가을',10:'토왕',11:'겨울'};
+        const elSeasonMapKr = {봄:'wood', 여름:'fire', 가을:'metal', 겨울:'water', 토왕:'earth'};
+        const monthSeason = seasonMap[mbi];
+        const seasonEl = elSeasonMapKr[monthSeason];
+        const deukRyung = (dmEl === seasonEl) || (tenGodMap.seal === seasonEl);
+        
+        // v4.17.2: 대운 순행/역행 계산
+        const yearStemIdx = STEM.indexOf(SAJU.year.s);
+        const yearIsYang = yearStemIdx % 2 === 0;
+        const luckDirection = (yearIsYang && GENDER === 'm') || (!yearIsYang && GENDER === 'f') ? '순행(順行)' : '역행(逆行)';
         
         // 12운성 계산
         const yearState = getTwelveState(dm, SAJU.year.b);
@@ -9153,7 +9250,7 @@ function copySajuForAI() {
         ];
         const hourLabel = (BIRTH_HOUR !== null && BIRTH_HOUR >= 0 && BIRTH_HOUR < 12) ? HOUR_LABELS[BIRTH_HOUR] : '시간 모름';
         
-        // v31.9: 음력 입력 시 원래 날짜도 명확히 표시
+        // v32.1: 음력 입력 시 원래 날짜도 명확히 표시
         let birthDateText;
         if (CALENDAR === 'lunar' && ORIGINAL_LUNAR_YEAR) {
             birthDateText = `${BIRTH_YEAR}년 ${BIRTH_MONTH}월 ${BIRTH_DAY}일 ${hourLabel} (양력) ← 음력 ${ORIGINAL_LUNAR_MONTH}월 ${ORIGINAL_LUNAR_DAY}일 변환`;
@@ -9174,15 +9271,6 @@ function copySajuForAI() {
         } else {
             correctionInfo.push('조자시 방식');
         }
-        // [v31.9 NEW] 보정 전/후 시(時)가 다른 경우 명시
-        if (INPUT_HOUR_BRANCH_IDX !== null && ADJUSTED_HOUR_BRANCH_IDX !== null && 
-            INPUT_HOUR_BRANCH_IDX >= 0 && INPUT_HOUR_BRANCH_IDX !== ADJUSTED_HOUR_BRANCH_IDX) {
-            const inputBranch = BRANCH[INPUT_HOUR_BRANCH_IDX]?.k || '';
-            const adjustedBranch = BRANCH[ADJUSTED_HOUR_BRANCH_IDX]?.k || '';
-            if (inputBranch && adjustedBranch) {
-                correctionInfo.push(`입력 ${inputBranch}시 → 보정 후 ${adjustedBranch}시`);
-            }
-        }
         const correctionText = correctionInfo.length > 0 ? `\n• 시간보정: ${correctionInfo.join(', ')}` : '';
         
         let text = `===== 사주팔자 분석 결과 =====
@@ -9196,11 +9284,29 @@ function copySajuForAI() {
 • 천간: ${SAJU.year.s.c}(${SAJU.year.s.k}) ${SAJU.month.s.c}(${SAJU.month.s.k}) ${SAJU.day.s.c}(${SAJU.day.s.k}) ${SAJU.hour ? SAJU.hour.s.c+'('+SAJU.hour.s.k+')' : '미상'}
 • 지지: ${SAJU.year.b.c}(${SAJU.year.b.k}) ${SAJU.month.b.c}(${SAJU.month.b.k}) ${SAJU.day.b.c}(${SAJU.day.b.k}) ${SAJU.hour ? SAJU.hour.b.c+'('+SAJU.hour.b.k+')' : '미상'}
 
-【십신 (천간 기준)】
+【⚡ 십신 매핑표 (일간 ${dm.c} ${ELEMENT[dm.e].k} 기준) - AI 필수 참조】
+• 비겁(比劫): ${ELEMENT[tenGodMap.peer].k} (${ELEMENT[tenGodMap.peer].c}) - 일간과 같은 오행
+• 식상(食傷): ${ELEMENT[tenGodMap.output].k} (${ELEMENT[tenGodMap.output].c}) - 일간이 생하는 오행
+• 재성(財星): ${ELEMENT[tenGodMap.wealth].k} (${ELEMENT[tenGodMap.wealth].c}) - 일간이 극하는 오행
+• 관살(官殺): ${ELEMENT[tenGodMap.officer].k} (${ELEMENT[tenGodMap.officer].c}) - 일간을 극하는 오행
+• 인성(印星): ${ELEMENT[tenGodMap.seal].k} (${ELEMENT[tenGodMap.seal].c}) - 일간을 생하는 오행
+
+【십신 - 천간】
 • 년간 ${SAJU.year.s.c}: ${yearGod.k} - ${yearGod.d}
 • 월간 ${SAJU.month.s.c}: ${monthGod.k} - ${monthGod.d}
 • 일간 ${SAJU.day.s.c}: 본인 (일주)
 ${hourGod ? '• 시간 ' + SAJU.hour.s.c + ': ' + hourGod.k + ' - ' + hourGod.d : '• 시간: 미상'}
+
+【십신 - 지지 ⚠️ 중요】
+• 년지 ${SAJU.year.b.c} (${ELEMENT[SAJU.year.b.e].k}, ${yearBranchYang}): ${yearBranchGod.k}
+• 월지 ${SAJU.month.b.c} (${ELEMENT[SAJU.month.b.e].k}, ${monthBranchYang}): ${monthBranchGod.k} ← 월령(月令)
+• 일지 ${SAJU.day.b.c} (${ELEMENT[SAJU.day.b.e].k}, ${dayBranchYang}): ${dayBranchGod.k} ← 배우자궁
+${SAJU.hour ? '• 시지 ' + SAJU.hour.b.c + ' (' + ELEMENT[SAJU.hour.b.e].k + ', ' + hourBranchYang + '): ' + hourBranchGod.k + ' ← 자녀궁' : '• 시지: 미상'}
+
+【월령 득령/실령】
+• 출생월: ${SAJU.month.b.k} (${monthSeason})
+• 계절 오행: ${ELEMENT[seasonEl].k} (${ELEMENT[seasonEl].c})
+• 일간 ${dm.c} (${ELEMENT[dm.e].k}): ${deukRyung ? '✅ 득령(得令) - 제철이라 힘이 있음' : '❌ 실령(失令) - 계절을 잃어 도움 필요'}
 
 【12운성 (일간 기준)】
 • 년지 ${SAJU.year.b.c}: ${yearState.k} (에너지 ${yearState.l}/12)
@@ -9332,12 +9438,26 @@ ${gongmang?.affected?.length ? '• 영향: ' + gongmang.affected.join(', ') + '
 ${sinsal.length ? sinsal.map(s => '• ' + s.n + '(' + (s.t === 'good' ? '길' : s.t === 'bad' ? '흉' : '중') + '): ' + s.d).join('\n') : '• 특별한 신살 없음'}
 
 【대운 (10년 단위)】
-${luck.slice(0,8).map(l => '• ' + l.startAge + '-' + l.endAge + '세: ' + l.s.c + l.b.c + ' (' + ELEMENT[l.s.e].k + ELEMENT[l.b.e].k + ')' + (l.isCur ? ' ◀ 현재' : '')).join('\n')}
+• 방향: ${luckDirection} (${yearIsYang ? '양년' : '음년'} ${GENDER === 'm' ? '남명' : '여명'})
+${luck.slice(0,8).map(l => {
+    const lStemGod = getTenGod(l.s, dm);
+    const lBranchGod = getTenGod({e: l.b.e, y: getBranchYang(l.b)}, dm);
+    return '• ' + l.startAge + '-' + l.endAge + '세: ' + l.s.c + l.b.c + ' [' + lStemGod.k + '/' + lBranchGod.k + ']' + (l.isCur ? ' ◀ 현재' : '');
+}).join('\n')}
 
 【현재 운세】
-• 현재 대운: ${curLuck ? curLuck.s.c + curLuck.b.c + ' (' + curLuck.startAge + '-' + curLuck.endAge + '세)' : '계산 중'}
+• 현재 대운: ${curLuck ? (() => {
+    const curStemGod = getTenGod(curLuck.s, dm);
+    const curBranchGod = getTenGod({e: curLuck.b.e, y: getBranchYang(curLuck.b)}, dm);
+    return curLuck.s.c + curLuck.b.c + ' [' + curStemGod.k + '/' + curBranchGod.k + '] (' + curLuck.startAge + '-' + curLuck.endAge + '세)';
+})() : '계산 중'}
 • 대운 평가: ${curLuck ? (curLuck.rating === 'good' ? '길운' : curLuck.rating === 'bad' ? '흉운' : '평운') : '-'}
-• ${currentYear}년 세운: ${(() => { const yp = calcYearPillar(currentYear, 6, 1); return yp.s.c + yp.b.c + ' (' + ELEMENT[yp.s.e].k + ELEMENT[yp.b.e].k + ')'; })()}${tanghwaWarningText}
+• ${currentYear}년 세운: ${(() => { 
+    const yp = calcYearPillar(currentYear, 6, 1); 
+    const ypStemGod = getTenGod(yp.s, dm);
+    const ypBranchGod = getTenGod({e: yp.b.e, y: getBranchYang(yp.b)}, dm);
+    return yp.s.c + yp.b.c + ' [' + ypStemGod.k + '/' + ypBranchGod.k + '] (' + ELEMENT[yp.s.e].k + ELEMENT[yp.b.e].k + ')'; 
+})()}${tanghwaWarningText}
 
 【향후 10년 운세 미리보기】
 ${next10Text}
@@ -9676,6 +9796,29 @@ ${monthText}
 8. 종합 조언
    - 용신 활용 구체적 방법 (색상, 방향, 직업, 인간관계)
    - 이 사주의 핵심 메시지 한 줄 요약
+
+===== ⚠️ AI 필수 지침 - 반드시 준수 ⚠️ =====
+
+【제공된 데이터 사용 - 직접 계산 금지】
+1. 십신 매핑표가 미리 계산되어 있습니다. 이것을 사용하세요. 어떤 오행이 어떤 십신인지 직접 계산하지 마세요.
+2. 지지 십신이 제공됩니다. 각 지지의 오행에 따른 십신이 있습니다.
+3. 대운 십신이 [천간/지지] 형태로 제공됩니다. 이것을 그대로 사용하세요.
+4. 세운 십신도 제공됩니다. 직접 재계산하지 마세요.
+
+【AI가 자주 틀리는 패턴 - 주의】
+1. ❌ 지지 십신 무시 - 지지도 십신이 있습니다! "에너지"만 있는 게 아닙니다.
+2. ❌ 득령/실령 혼동 - 월령 득령/실령 섹션을 확인하세요. 미리 계산되어 있습니다.
+3. ❌ 대운 잘못 해석 - 제공된 [천간/지지] 십신 라벨을 사용하세요.
+4. ❌ 음양 혼동 - 甲丙戊庚壬은 양(陽), 乙丁己辛癸는 음(陰)입니다.
+5. ❌ 편재/정재 구분 실패 - 전체 라벨을 확인하세요.
+6. ❌ 월령(月令) 무시 - 월지 십신이 신강/신약 판단에 가장 중요합니다.
+
+【해석 우선순위】
+1. 삼합국/육합 등 합(合) 먼저 확인
+2. 득령/실령 상태 - 기본 강약 판단
+3. 대운 + 세운 십신 - 현재 인생 테마
+4. 지지 십신 - 숨겨진 영향력
+5. 나머지 요소들
 `;
 
         navigator.clipboard.writeText(text).then(() => {
