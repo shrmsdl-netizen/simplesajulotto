@@ -4221,25 +4221,7 @@ function fullAnalysis(saju, strength) {
         gi = wealthEl;
         yongReason = '통관용신(살인상생): 관살이 강해 인성으로 통관';
     }
-    // 2순위: 병약용신 (재다신약)
-    else if (isWealthStrong && isWeak) {
-        // [v28.2 FIX] 비겁이 원국에 약하면 인성 우선 (금생수)
-        const peerPower = elCount[peerEl] || 0;
-        
-        if (peerPower <= 1) {
-            // 비겁이 거의 없음 → 인성으로 비겁을 생해야 함
-            yong = sealEl;   // 인성
-            hee = peerEl;    // 비겁
-            yongReason = '병약용신(생비): 비겁 부재로 인성이 먼저 필요';
-        } else {
-            // 비겁이 있음 → 비겁으로 분재
-            yong = peerEl;
-            hee = sealEl;
-            yongReason = '병약용신(분재): 재성 과다로 비겁 필요';
-        }
-        gi = wealthEl;
-    }
-    // 3순위: 조후용신 (한난조습)
+    // 2순위: 조후용신 (한난조습)
     else if (climate.type.includes('극한') || climate.type.includes('한')) {
         yong = 'fire';
         if (isOfficerStrong && sealEl === 'water') {
@@ -4257,6 +4239,24 @@ function fullAnalysis(saju, strength) {
         hee = 'metal';
         gi = 'fire';
         yongReason = '조후용신(윤택): 조열 사주로 水 필요';
+    }
+    // 3순위: 병약용신 (재다신약)
+    else if (isWealthStrong && isWeak) {
+        // [v28.2 FIX] 비겁이 원국에 약하면 인성 우선 (금생수)
+        const peerPower = elCount[peerEl] || 0;
+        
+        if (peerPower <= 1) {
+            // 비겁이 거의 없음 → 인성으로 비겁을 생해야 함
+            yong = sealEl;   // 인성
+            hee = peerEl;    // 비겁
+            yongReason = '병약용신(생비): 비겁 부재로 인성이 먼저 필요';
+        } else {
+            // 비겁이 있음 → 비겁으로 분재
+            yong = peerEl;
+            hee = sealEl;
+            yongReason = '병약용신(분재): 재성 과다로 비겁 필요';
+        }
+        gi = wealthEl;
     }
     // 4순위: 억부용신 (기본)
     else if (isStrong) {
