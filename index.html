@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <!--
 ╔═══════════════════════════════════════════════════════════════════════════════╗
-║  🍀 사주로또 Pro v32.1 [PUBLIC] - 배포용                                      ║
+║  🍀 사주로또 Pro v32.2 [PUBLIC] - 배포용                                      ║
 ║  전문가 수준 사주팔자 분석 & 로또 번호 생성기                                 ║
 ║                                                                                ║
 ║  🆓 FREE EDITION - 모든 기능 무료                                             ║
@@ -17,7 +17,7 @@
 ║    • 데이터: STEM, BRANCH, TEN_GODS, ELEMENT, JIJANGGAN, TWELVE_STATES       ║
 ║    • 계산: calcYearPillar, calcMonthPillar, calcDayPillar, calcHourPillar    ║
 ║    • 분석: calcStrength, calcGods, calcFormat, calcLuck, calcYearLuck        ║
-║    • 십신: getTenGod, getTwelveState, getBranchYang (v32.1)                  ║
+║    • 십신: getTenGod, getTwelveState, getBranchYang (v32.2)                  ║
 ║    • 신살: calcGongmang, calcSinsal, analyzeJijanggan                        ║
 ║    • 합충: analyzeAdvancedInteractions, analyzeSamhapBureau                  ║
 ║    • 통변: analyzeClimate, analyzeHealth, analyzeYukChinRon                  ║
@@ -31,6 +31,10 @@
 ╠═══════════════════════════════════════════════════════════════════════════════╣
 ║  📝 VERSION HISTORY                                                           ║
 ╠═══════════════════════════════════════════════════════════════════════════════╣
+║  v32.2 (2026-01-22):                                                          ║
+║    - [SYNC] K-MUDANG v4.18.0 완전 동기화                                       ║
+║    - [NEW] 종격(從格) 로직 추가: 종재격, 종살격, 종아격, 종강격                ║
+║    - [NEW] calcGods: isFollower, followerType 반환값 추가                      ║
 ║  v32.1 (2026-01-21):                                                          ║
 ║    - [NEW] 지지 십신 계산 기능 추가 (getBranchYang 함수)                      ║
 ║    - [NEW] 십신 매핑표 추가 (AI 필수 참조)                                    ║
@@ -4747,11 +4751,14 @@ function findByungYak(saju, strength) {
    새 로직은 fullAnalysis()를 참조하세요.
    ======================================== */
 function calcGods(saju, str, samhapResult) {
+    // v32.2: K-MUDANG 종격(Follower) 로직 통합
     const dm = saju.day.s;
     const dmi = STEM.indexOf(dm);
     const mbi = BRANCH.indexOf(saju.month.b);
     const season = SEASON[mbi];
     let yong, hee, gi, johu = null, johuDesc = '';
+    let isFollower = false;   // v32.2: 종격 여부 (K-MUDANG 동기화)
+    let followerType = null;  // v32.2: 종격 종류
     
     // 1. 한난조습 분석 (먼저!)
     const climate = analyzeClimate(saju);
@@ -4773,18 +4780,65 @@ function calcGods(saju, str, samhapResult) {
     const wealthEl = EL_ORDER[(EL_ORDER.indexOf(dmEl) + 2) % 5]; // 재성
     const officerEl = EL_ORDER[(EL_ORDER.indexOf(dmEl) + 3) % 5]; // 관살
     
+    // ====== 3.5 오행 카운트 + 종격 체크 (v32.2 K-MUDANG 동기화) ======
+    const elCount = {wood:0, fire:0, earth:0, metal:0, water:0};
+    [saju.year, saju.month, saju.day, saju.hour].forEach(p => {
+        if (p && p.s) elCount[p.s.e]++;
+        if (p && p.b) elCount[p.b.e]++;
+    });
+    
+    // 종격 조건: 10% 미만 + 일지/시지 모두 No Root
+    const noRoot = !str.dayRoot && !str.hourRoot;
+    if (str.pct < 10 && noRoot) {
+        // 극신약 + No Root = 종격 가능성
+        let maxEl = null, maxCount = 0;
+        Object.entries(elCount).forEach(([el, cnt]) => {
+            if (el !== dmEl && cnt > maxCount) {
+                maxEl = el;
+                maxCount = cnt;
+            }
+        });
+        
+        if (maxCount >= 4) {
+            isFollower = true;
+            // 종격 종류 판정
+            if (maxEl === wealthEl) {
+                followerType = '종재격';
+                yong = maxEl;
+                hee = EL_ORDER[(EL_ORDER.indexOf(maxEl) + 1) % 5];
+                gi = sealEl;
+            } else if (maxEl === officerEl) {
+                followerType = '종살격';
+                yong = maxEl;
+                hee = EL_ORDER[(EL_ORDER.indexOf(maxEl) + 4) % 5];
+                gi = dmEl;
+            } else if (maxEl === exprEl) {
+                followerType = '종아격';
+                yong = maxEl;
+                hee = EL_ORDER[(EL_ORDER.indexOf(maxEl) + 1) % 5];
+                gi = sealEl;
+            } else {
+                followerType = '종강격';
+                yong = maxEl;
+                hee = EL_ORDER[(EL_ORDER.indexOf(maxEl) + 4) % 5];
+                gi = EL_ORDER[(EL_ORDER.indexOf(maxEl) + 3) % 5];
+            }
+            johuDesc = `${followerType}: 극신약으로 ${maxEl}을 따름`;
+        }
+    }
+    
     // 4. ★ 통합 용신 결정 (조후 + 억부 + 삼합국) ★
-    if (str.type === 'strong') {
+    if (!isFollower && str.type === 'strong') {
         // 신강: 설기(식상) 또는 극(재/관) 필요
         yong = exprEl;
         hee = wealthEl;
         gi = sealEl;
-    } else if (str.type === 'weak') {
+    } else if (!isFollower && str.type === 'weak') {
         // 신약: 기본적으로 인성/비겁 필요
         yong = sealEl;
         hee = peerEl;
         gi = officerEl;
-    } else {
+    } else if (!isFollower) {
         // 중화
         yong = exprEl;
         hee = wealthEl;
@@ -4859,7 +4913,9 @@ function calcGods(saju, str, samhapResult) {
         johu, johuDesc,
         climate,
         byungYak,
-        sub: johuData?.sub || null
+        sub: johuData?.sub || null,
+        isFollower,      // v32.2: 종격 여부
+        followerType     // v32.2: 종격 종류
     };
 }
 
