@@ -21,7 +21,7 @@
 ║    • 데이터: STEM, BRANCH, TEN_GODS, ELEMENT, JIJANGGAN, TWELVE_STATES       ║
 ║    • 계산: calcYearPillar, calcMonthPillar, calcDayPillar, calcHourPillar    ║
 ║    • 분석: calcStrength, calcGods, calcFormat, calcLuck, calcYearLuck        ║
-║    • 십신: getTenGod, getTwelveState, getBranchYang (v32.5)                  ║
+║    • 십신: getTenGod, getTwelveState, getBranchYang (v32.6)                  ║
 ║    • 신살: calcGongmang, calcSinsal, analyzeJijanggan                        ║
 ║    • 합충: analyzeAdvancedInteractions, analyzeSamhapBureau                  ║
 ║    • 통변: analyzeClimate, analyzeHealth, analyzeYukChinRon                  ║
@@ -43,10 +43,9 @@
 ║    - [FIX] 테마 색상: 밝은 배경 + 강한 포인트 적용                             ║
 ║    - Total: 70개 AI Rules + 4K 부적                                           ║
 ║                                                                               ║
-║  v32.6 (2026-01-23):                                                          ║
-║    - [FIX] AI 프롬프트 복사 오류 수정 (한신 계산 버그)                          ║
-║    - [FIX] GODS.gi가 문자열인데 숫자 연산 시도하던 문제 해결                    ║
-║                                                                                ║
+║  v32.6 (2026-01-25):                                                          ║
+║    - [FIX] 한신(閑神) 계산 오류 수정: 기신+1 → 기신-1 (기신을 생하는 오행)    ║
+║                                                                               ║
 ║  v32.5 (2026-01-23):                                                          ║
 ║    - [NEW] AI Rules 54개 → 70개 확장 (K-MUDANG 동기화 + 100점 보장 프롬프트)  ║
 ║    - [NEW] 규칙 55-69: K-MUDANG 고급 규칙 이식                                 ║
@@ -2069,7 +2068,7 @@ let samhapText = '';let samhapWarning = '';try {const advInt = analyzeAdvancedIn
 return `• ${s.name}: ${s.complete ? '완전 성립!' : '반합'} - ${s.desc}${meaning}`;}).join('\n');const completeSamhap = advInt.samhapGuk.filter(s => s.complete);if (completeSamhap.length > 0) {samhapWarning = `\n\n⚠️ [중요: 삼합국 완전 성립]\n${completeSamhap.map(s =>
 `${s.name}이 완성되어 지지의 ${s.result} 기운이 매우 강해졌습니다. 격국과 신강/신약 판단 시 이 오행 변화를 반드시 고려해야 합니다.`
 ).join('\n')}`;}} else {samhapText = '• 삼합국 없음';}} catch(e) { samhapText = '• 삼합국 데이터 없음'; }
-const hansinEl = elOrder[(elOrder.indexOf(GODS.gi) + 1) % 5];const HOUR_LABELS = [
+const hansinEl = elOrder[(elOrder.indexOf(GODS.gi) + 4) % 5];const HOUR_LABELS = [
 '자시(子時, 23:30~01:29)',
 '축시(丑時, 01:30~03:29)',
 '인시(寅時, 03:30~05:29)',
@@ -2442,7 +2441,7 @@ ${monthText}
 - 예: 水 5개 + 2026년 午(火) 자오충 → "조후용신(火)이 왔지만 거대한 물(水)을 건드려 쓰나미 위험. 확장보다 건강관리와 현상유지가 최선."
 - 왕신충발 + 용신운 = "기회는 왔으나 리스크도 극대화. 공격적 투자/확장 금지. 수비 모드로 전환."
 - 건강: 왕신 오행의 장기 + 충하는 오행의 장기 모두 위험. 예: 水왕 + 火충 → 신장/방광 + 심장/혈관 동시 주의.
-===== 🆕 확장 규칙 55-70 (v32.5) =====
+===== 🆕 확장 규칙 55-70 (v32.6) =====
 55. 【지지 음양 참조표】
 • 陽(양) 지지: 子, 寅, 辰, 午, 申, 戌
 • 陰(음) 지지: 丑, 卯, 巳, 未, 酉, 亥
@@ -2498,7 +2497,7 @@ ${monthText}
 • 재성 0개: "축적보다 흐름. 실력/지위 집중 → 돈은 따라옴"
 • 관성 0개: "규칙 싫어함. 자율적 커리어 필수"
 • 인성 0개: "부모 의존 불가. 스스로 공부하여 안전망 구축"
-70. 【희신/기신 필수 명시 규칙】 ⭐ NEW (v32.5)
+70. 【희신/기신 필수 명시 규칙】 ⭐ NEW (v32.6)
 • 용신을 분석할 때 반드시 다음 형식으로 출력하세요:
 ┌─────────────────────────────────┐
 │ 용신: ○○ (이유) │
