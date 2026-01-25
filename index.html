@@ -8,7 +8,7 @@
   gtag('config', 'G-9SYCKLSKD6');
 </script><!--
 ╔═══════════════════════════════════════════════════════════════════════════════╗
-║  🍀 사주로또 Pro v33.8 [PUBLIC] - 부적 등급 시스템                            ║
+║  🍀 사주로또 Pro v33.9 [PUBLIC] - 암합 정정 & 경고 강화                       ║
 ║  전문가 수준 사주팔자 분석 & 로또 번호 생성기                                 ║
 ║                                                                                ║
 ║  🆓 FREE EDITION - 모든 기능 무료                                             ║
@@ -35,6 +35,12 @@
 ╠═══════════════════════════════════════════════════════════════════════════════╣
 ║  📝 VERSION HISTORY                                                           ║
 ╠═══════════════════════════════════════════════════════════════════════════════╣
+║  v33.9 (2026-01-25):                                                          ║
+║    - [FIX] 암합 정의 수정: 진유/사신/오축 암합 제거 (육합과 혼동 방지)         ║
+║    - [FIX] 시간보정 후 실제 시지 표시 (입력 시 ≠ 보정 후 시 명확히 표기)       ║
+║    - [NEW] 기신 2배 경고: 천간+지지 모두 기신이면 특별 경고                    ║
+║    - [NEW] 조열 사주 병오년 경고: 여름생+火기신+丙午년 건강 경고              ║
+║    - [NEW] AI 복사에 오늘 일진 추가: 날짜/일진/십신/12운성/용신기신 여부      ║
 ║  v33.8 (2026-01-25):                                                          ║
 ║    - [NEW] 부적 등급 시스템: 희귀/영웅/전설 3단계                              ║
 ║    - [NEW] 등급 라벨: 시리얼 위 「전설」「영웅」 표시                          ║
@@ -251,12 +257,9 @@ water:{c:'水',k:'수',n:'물',color:'#2196F3',icon:'💧',nums:[1,6,11,16,21,26
 {branches: [8,9,10], element: 'metal', name: '신유술 방합', dir: '서방금국(西方金局)'},
 {branches: [11,0,1], element: 'water', name: '해자축 방합', dir: '북방수국(北方水局)'}
 ];const AMHAP = [
-{a: 2, b: 1, name: '인축암합', desc: '寅의 병(丙)과 丑의 신(辛)이 암합'},
-{a: 3, b: 8, name: '묘신암합', desc: '卯의 을(乙)과 申의 경(庚)이 암합'},
-{a: 4, b: 9, name: '진유암합', desc: '辰의 을(乙)과 酉의 경(庚)이 암합'},
-{a: 5, b: 8, name: '사신암합', desc: '巳의 병(丙)과 申의 경(庚)이 암합'},
-{a: 6, b: 1, name: '오축암합', desc: '午의 정(丁)과 丑의 기(己)가 암합'},
-{a: 6, b: 11, name: '오해암합', desc: '午의 정(丁)과 亥의 임(壬)이 암합'}
+{a: 2, b: 1, name: '인축암합', desc: '寅의 병(丙)과 丑의 신(辛)이 암합 (丙辛合)'},
+{a: 3, b: 8, name: '묘신암합', desc: '卯의 을(乙)과 申의 경(庚)이 암합 (乙庚合)'},
+{a: 6, b: 11, name: '오해암합', desc: '午의 정(丁)과 亥의 임(壬)이 암합 (丁壬合)'}
 ];const NAPEUM = [
 {name: '해중금(海中金)', element: 'metal', desc: '바다 속의 금. 깊이 숨겨진 보물.'},
 {name: '노중화(爐中火)', element: 'fire', desc: '화로 속의 불. 제련하는 열정.'},
@@ -2166,7 +2169,7 @@ return `<div class="info-box"><p><strong>📅 오늘의 운세</strong><span sty
 오늘의 일진: <strong>${dp.s.c}${dp.b.c}</strong> (${ELEMENT[dp.s.e].k}${ELEMENT[dp.b.e].k})<br>
 오늘의 십신: <strong>${god.k}</strong> - ${god.d}
 </p><div style="margin-top:15px;padding:12px;background:rgba(255,255,255,0.05);border-radius:8px;"><p><strong>💡 오늘의 조언</strong></p><p style="margin-top:8px;line-height:1.6;">${advice}</p></div></div>`;}
-function getYearFortune() {const cy = new Date().getFullYear();const yp = calcYearPillar(cy, 6, 1);const god = getTenGod(yp.s, SAJU.day.s);const isYong = [yp.s.e, yp.b.e].includes(GODS.yong);const isHee = [yp.s.e, yp.b.e].includes(GODS.hee);const isGi = [yp.s.e, yp.b.e].includes(GODS.gi);let rating, advice;if (isYong) {rating = '🌟 대길년(大吉年)';advice = '올해는 용신의 해! 10년에 한 번 오는 기회의 해입니다. 적극적으로 도전하고 확장하세요. 이직, 창업, 결혼 등 큰 결정에 좋습니다.';} else if (isHee) {rating = '😊 길년(吉年)';advice = '희신의 기운이 도와주는 해입니다. 하는 일이 순조롭고 주변의 도움을 받기 쉽습니다. 인맥을 넓히고 배움에 투자하세요.';} else if (isGi) {rating = '⚠️ 조심해야 할 해';advice = '기신의 해이니 무리한 확장이나 투자는 피하세요. 건강 관리에 신경 쓰고, 안정을 유지하면서 내실을 다지는 시기입니다.';} else {rating = '😐 평년(平年)';advice = '큰 변화 없이 평탄한 해입니다. 묵묵히 자기 일에 충실하면서 다음 기회를 준비하세요.';}
+function getYearFortune() {const cy = new Date().getFullYear();const yp = calcYearPillar(cy, 6, 1);const god = getTenGod(yp.s, SAJU.day.s);const isYong = [yp.s.e, yp.b.e].includes(GODS.yong);const isHee = [yp.s.e, yp.b.e].includes(GODS.hee);const isGi = [yp.s.e, yp.b.e].includes(GODS.gi);const isDoubleGi = yp.s.e === GODS.gi && yp.b.e === GODS.gi;const mbi = SAJU.month ? BRANCH.indexOf(SAJU.month.b) : -1;const isSummerBorn = [5, 6, 7].includes(mbi);const isJoryeol = isSummerBorn && GODS.gi === 'fire';let rating, advice;if (isYong) {rating = '🌟 대길년(大吉年)';advice = '올해는 용신의 해! 10년에 한 번 오는 기회의 해입니다. 적극적으로 도전하고 확장하세요. 이직, 창업, 결혼 등 큰 결정에 좋습니다.';} else if (isHee) {rating = '😊 길년(吉年)';advice = '희신의 기운이 도와주는 해입니다. 하는 일이 순조롭고 주변의 도움을 받기 쉽습니다. 인맥을 넓히고 배움에 투자하세요.';} else if (isDoubleGi) {rating = '🚨 특별 주의해야 할 해';advice = `천간(${yp.s.c})과 지지(${yp.b.c}) 모두 기신(${ELEMENT[GODS.gi].k}) 오행입니다! 기신이 2배로 강하게 들어오는 해이니 건강, 재물, 인간관계 모두 각별히 조심하세요. 무리한 확장, 투자, 이직은 피하고 수비 모드로 전환하세요.${isJoryeol ? ' 특히 여름생으로 조열(燥熱)한 사주인데 火가 2배로 들어오면 심혈관, 안구, 염증 질환에 각별히 주의하세요!' : ''}`;} else if (isGi) {rating = '⚠️ 조심해야 할 해';advice = '기신의 해이니 무리한 확장이나 투자는 피하세요. 건강 관리에 신경 쓰고, 안정을 유지하면서 내실을 다지는 시기입니다.';} else {rating = '😐 평년(平年)';advice = '큰 변화 없이 평탄한 해입니다. 묵묵히 자기 일에 충실하면서 다음 기회를 준비하세요.';}
 return `<div class="info-box"><p><strong>📆 ${cy}년 운세</strong><span style="color:var(--gold);">(${yp.s.c}${yp.b.c}년)</span></p><div style="margin-top:12px;text-align:center;font-size:18px;">${rating}</div><p style="margin-top:12px;line-height:1.8;">
 올해의 세운: <strong>${yp.s.c}${yp.b.c}</strong> (${ELEMENT[yp.s.e].k}${ELEMENT[yp.b.e].k})<br>
 올해의 십신: <strong>${god.k}</strong> - ${god.d}
@@ -2276,7 +2279,7 @@ const hansinEl = elOrder[(elOrder.indexOf(GODS.gi) + 4) % 5];const HOUR_LABELS =
 '유시(酉時, 17:30~19:29)',
 '술시(戌時, 19:30~21:29)',
 '해시(亥時, 21:30~23:29)'
-];const hourLabel = (BIRTH_HOUR !== null && BIRTH_HOUR >= 0 && BIRTH_HOUR < 12) ? HOUR_LABELS[BIRTH_HOUR] : '시간 모름';let birthDateText;if (CALENDAR === 'lunar' && ORIGINAL_LUNAR_YEAR) {birthDateText = `${BIRTH_YEAR}년 ${BIRTH_MONTH}월 ${BIRTH_DAY}일 ${hourLabel} (양력) ← 음력 ${ORIGINAL_LUNAR_MONTH}월 ${ORIGINAL_LUNAR_DAY}일 변환`;} else {birthDateText = `${BIRTH_YEAR}년 ${BIRTH_MONTH}월 ${BIRTH_DAY}일 ${hourLabel} (양력)`;}
+];const inputHourLabel = (BIRTH_HOUR !== null && BIRTH_HOUR >= 0 && BIRTH_HOUR < 12) ? HOUR_LABELS[BIRTH_HOUR] : '시간 모름';const actualBranchChar = SAJU.hour?.b?.c || '';const inputBranchChars = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];const inputBranchChar = (BIRTH_HOUR !== null && BIRTH_HOUR >= 0) ? inputBranchChars[BIRTH_HOUR] : '';const hourLabel = (actualBranchChar && inputBranchChar && inputBranchChar !== actualBranchChar) ? `${inputHourLabel} → 보정 후 ${actualBranchChar}時` : inputHourLabel;let birthDateText;if (CALENDAR === 'lunar' && ORIGINAL_LUNAR_YEAR) {birthDateText = `${BIRTH_YEAR}년 ${BIRTH_MONTH}월 ${BIRTH_DAY}일 ${hourLabel} (양력) ← 음력 ${ORIGINAL_LUNAR_MONTH}월 ${ORIGINAL_LUNAR_DAY}일 변환`;} else {birthDateText = `${BIRTH_YEAR}년 ${BIRTH_MONTH}월 ${BIRTH_DAY}일 ${hourLabel} (양력)`;}
 const correctionInfo = [];if (TIME_CORRECTION_SETTINGS.useSummerTime && isInSummerTime(BIRTH_YEAR, BIRTH_MONTH, BIRTH_DAY, 12, 0)) {correctionInfo.push('서머타임 -1시간 적용됨');}
 if (TIME_CORRECTION_SETTINGS.useLongitude) {correctionInfo.push('경도보정 -32분 적용됨');}
 if (TIME_CORRECTION_SETTINGS.useYajasi) {correctionInfo.push('야자시 방식');} else {correctionInfo.push('조자시 방식');}
@@ -2394,12 +2397,18 @@ ${luck.slice(0,8).map(l => {const lStemGod = getTenGod(l.s, dm);const lBranchGod
 • 현재 대운: ${curLuck ? (() => {const curStemGod = getTenGod(curLuck.s, dm);const curBranchGod = getTenGod({e: curLuck.b.e, y: getBranchYang(curLuck.b)}, dm);return curLuck.s.c + curLuck.b.c + ' [' + curStemGod.k + '/' + curBranchGod.k + '] (' + curLuck.startAge + '-' + curLuck.endAge + '세)';})() : '계산 중'}
 • 대운 평가: ${curLuck ? (curLuck.rating === 'good' ? '길운' : curLuck.rating === 'bad' ? '흉운' : '평운') : '-'}
 • ${currentYear}년 세운: ${(() => {const yp = calcYearPillar(currentYear, 6, 1);const ypStemGod = getTenGod(yp.s, dm);const ypBranchGod = getTenGod({e: yp.b.e, y: getBranchYang(yp.b)}, dm);return yp.s.c + yp.b.c + ' [' + ypStemGod.k + '/' + ypBranchGod.k + '] (' + ELEMENT[yp.s.e].k + ELEMENT[yp.b.e].k + ')';})()}${tanghwaWarningText}
+【오늘의 일진】
+${(() => {const today = new Date();const dp = calcDayPillar(today.getFullYear(), today.getMonth() + 1, today.getDate());const todayGod = getTenGod(dp.s, dm);const todayState = getTwelveState(dm, dp.b);const isYong = [dp.s.e, dp.b.e].includes(GODS.yong);const isHee = [dp.s.e, dp.b.e].includes(GODS.hee);const isGi = [dp.s.e, dp.b.e].includes(GODS.gi);const rating = isYong ? '✅ 용신 기운 - 적극적으로 움직이세요!' : isHee ? '😊 희신 기운 - 순조로운 하루' : isGi ? '⚠️ 기신 기운 - 무리하지 마세요' : '😐 평온 - 일상 유지';return `• 날짜: ${today.getFullYear()}년 ${today.getMonth()+1}월 ${today.getDate()}일
+• 일진: ${dp.s.c}${dp.b.c} (${ELEMENT[dp.s.e].k}${ELEMENT[dp.b.e].k})
+• 일진 십신: ${todayGod.k} - ${todayGod.d}
+• 일진 12운성: ${todayState.k} (에너지 ${todayState.l}/12)
+• 오늘의 기운: ${rating}`;})()}
 【향후 10년 운세 미리보기】
 ${next10Text}
 【${currentYear}년 월별 운세】
 ${monthText}
 ===== AI 해석 요청 =====
-[🔥 핵심 7대 지침 (빠른 참조)]
+[🔥 핵심 8대 지침 (빠른 참조)]
 ① 삼합국 완성 시 지지 오행 변화 → 격국/용신에 반드시 반영
 ② 배우자성이 지장간에만 있으면 '암장(暗藏)'으로 해석
 ③ 왕지 충돌(자오충/묘유충)은 '격동의 해'로 강력 경고
@@ -2407,6 +2416,7 @@ ${monthText}
 ⑤ 2026년 병오(丙午)년은 火 기운 강력 → 조후/억부 고려해 조언
 ⑥ 탕화살(축오/인사) + 세운 중첩 = '멘탈 붕괴/화병' 특별 주의
 ⑦ 수다화식(水多火熄) 사주는 조후보다 억부(불을 살리는 것) 우선
+⑧ 【오늘의 일진】 섹션을 반드시 해석 → 오늘 하루 구체적 조언 제공
 [페르소나 설정]
 당신은 30년 경력의 현대적이고 세련된 명리학자입니다.
 - 전문 용어(비견, 편재, 식신, 건록, 관대 등)를 사용하되, 반드시 그 뒤에 초등학생도 이해할 수 있는 쉬운 비유를 섞어 설명해주세요. 예: "비견(比肩)은 나와 같은 에너지를 가진 형제자매 같은 존재예요."
@@ -2723,9 +2733,13 @@ ${monthText}
 5. 건강 주의사항
 - 오행 불균형으로 인한 취약 부위
 - 예방 및 관리 방법
-6. 현재 운세 (${currentYear}년)
+6. 현재 운세 (${currentYear}년) + 오늘의 운세
 - 현재 대운과 세운의 조합
 - 올해 특히 주의할 점과 기회
+- ⭐ 【오늘의 일진】 데이터를 바탕으로 오늘 하루 구체적 조언
+  · 오늘 일진이 용신/희신이면 → 적극적으로 움직일 일, 좋은 시간대
+  · 오늘 일진이 기신이면 → 피해야 할 일, 조심할 점
+  · 일진 십신에 따른 오늘의 테마 (예: 편재일이면 재물 기회, 관살일이면 직장 주의)
 7. 인생 전반의 흐름
 - 궁위별 시기 분석 (유년-청년-중년-말년)
 - 주요 전환점과 대비 방법
