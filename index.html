@@ -178,12 +178,14 @@ function generateCharacterSectionHTML(myIlju, pIlju, myDm, pDm) {
 ║    - [FIX] fullAnalysis 조후용신 우선순위 버그 수정                            ║
 ║           → 조후론(한/조) 조건을 통관용신 조건보다 먼저 체크                   ║
 ║           → 겨울 신약+관살강 사주도 火 용신 정상 판정                          ║
+║    - [FIX] 납음 오타 수정: 泉上水 → 泉中水 (천중수)                            ║
 ║    - [NEW] 궁합탭 음력 입력 지원 추가                                          ║
 ║           → PARTNER_CALENDAR 변수, setPartnerCalendar() 함수                  ║
 ║           → runMatch(), analyzeMatch() 음력→양력 자동 변환                    ║
 ║    - [NEW] 궁합탭 시간(시주) 입력 지원 추가                                    ║
 ║           → partner-hour select (시간 모름 기본값)                            ║
 ║           → 시간 입력 시 시주 계산, 미입력 시 null 처리                        ║
+║    - [UPD] Footer 멘트 확장 (사주탭: 기능 추가 반영, 궁합탭: 8대→15대)         ║
 ║    - [SYNC] K-MUDANG v4.22.4와 동기화                                         ║
 ║                                                                               ║
 ║  v34.3 (2026-01-25):                                                          ║
@@ -427,7 +429,7 @@ const MATCH_STEM_COMBINE/*天干合*/ = [[0,5],[1,6],[2,7],[3,8],[4,9]];const HI
 {name: '성두토(城頭土)', element: 'earth', desc: '성벽의 흙. 튼튼하고 안정적.'},
 {name: '백랍금(白蠟金)', element: 'metal', desc: '밀랍의 금. 섬세하고 세련된.'},
 {name: '양류목(楊柳木)', element: 'wood', desc: '버드나무. 유연하고 아름다운.'},
-{name: '천상수(泉上水)', element: 'water', desc: '샘물. 끊임없이 솟는 생명력.'},
+{name: '천중수(泉中水)', element: 'water', desc: '샘 속의 물. 끊임없이 솟는 생명력.'},
 {name: '옥상토(屋上土)', element: 'earth', desc: '지붕의 흙. 보호하고 감싸는.'},
 {name: '벽력화(霹靂火)', element: 'fire', desc: '번개불. 강렬하고 폭발적인.'},
 {name: '송백목(松栢木)', element: 'wood', desc: '소나무. 사시사철 푸른 절개.'},
