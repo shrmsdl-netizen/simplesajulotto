@@ -3422,13 +3422,17 @@ const criticals = [];
 const hasStemCombine = r.analysis?.ilgan?.score >= 20;
 const hasBranchCombine = r.analysis?.ilji?.score >= 15;
 const hasBranchClash = r.analysis?.ilji?.score <= -10;
+const hasSamhap = r.analysis?.samhap?.score >= 10;
 if (hasStemCombine) criticals.push('💫 천간합(天干合) 성립! - 운명적 끌림, 천생연분 잠재력!');
 if (hasBranchCombine) criticals.push('💕 일지 육합(六合) 성립! - 배우자궁 조화, 결혼운 최상!');
 if (hasBranchClash) criticals.push('⚠️ 일지 충(沖) 발견! - 갈등 가능성, 단 열정적 관계로 전환 가능');
+if (hasSamhap) criticals.push('🔱 삼합/방합 성립! - ' + (r.analysis.samhap.details[0]?.desc || '강력한 카르마 연결'));
 if (mySSInP >= 2) criticals.push('✅ 상대가 내 배우자성(' + ELEMENT[mySpouseStar.el].k + ')을 ' + mySSInP + '개 보유! - 강한 끌림!');
 if (myYongInP >= 2) criticals.push('🌟 상대가 내 용신(' + ELEMENT[r.myGods.yong].k + ')을 풍부하게 보유! - 만나면 운 상승!');
+if (pYongInMe >= 2) criticals.push('💫 내가 상대의 용신(' + ELEMENT[r.pGods.yong].k + ')을 ' + pYongInMe + '개 보유! - 내가 상대의 귀인!');
 if (myGiInP >= 2) criticals.push('⚠️ 상대가 내 기신(' + ELEMENT[r.myGods.gi].k + ')을 많이 보유 - 장기적 관리 필요');
 if (r.analysis?.johu?.score === -3) criticals.push('🌡️ 동일 조후(同調候): 둘 다 ' + (myJohuInfo.includes('한') ? '寒(한)' : '燥(조)') + ' 계열 - 서로에게 균형을 줄 수 없음!');
+if (r.analysis?.johu?.score >= 12) criticals.push('🌡️ 조후 보완! - ' + (r.analysis.johu.details[0]?.desc || '한난조습 완벽 조화'));
 if (criticals.length === 0) criticals.push('특별한 핵심 요소 없음 - 아래 상세 분석 참조');
 let text = `===== 사주로또 Pro 궁합 분석 (v34.5) =====
 ⚠️ AI 해석 필수: 아래 모든 데이터를 반드시 해석하세요.
