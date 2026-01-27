@@ -1,4 +1,41 @@
 <!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
+<!-- SECURITY: Anti-copy protection -->
+<style>
+*{-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;-webkit-user-drag:none;-khtml-user-drag:none;-moz-user-drag:none;-o-user-drag:none;user-drag:none;}
+input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-select:text;user-select:text;}
+</style>
+<script>
+(function(){
+  // Block right-click
+  document.addEventListener('contextmenu',function(e){e.preventDefault();return false;});
+  // Block keyboard shortcuts
+  document.addEventListener('keydown',function(e){
+    // F12
+    if(e.key==='F12'){e.preventDefault();return false;}
+    // Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
+    if(e.ctrlKey&&e.shiftKey&&['I','i','J','j','C','c'].includes(e.key)){e.preventDefault();return false;}
+    // Ctrl+U (view source)
+    if(e.ctrlKey&&(e.key==='u'||e.key==='U')){e.preventDefault();return false;}
+    // Ctrl+S (save)
+    if(e.ctrlKey&&(e.key==='s'||e.key==='S')){e.preventDefault();return false;}
+    // Ctrl+P (print)
+    if(e.ctrlKey&&(e.key==='p'||e.key==='P')){e.preventDefault();return false;}
+  });
+  // Block drag
+  document.addEventListener('dragstart',function(e){e.preventDefault();return false;});
+  // Block select
+  document.addEventListener('selectstart',function(e){if(e.target.tagName!=='INPUT'&&e.target.tagName!=='TEXTAREA'){e.preventDefault();return false;}});
+  // DevTools detection
+  var devtools={open:false};
+  setInterval(function(){
+    var start=performance.now();
+    debugger;
+    if(performance.now()-start>100){
+      if(!devtools.open){devtools.open=true;document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1a2e;color:#D4AF37;font-size:2rem;font-family:serif;">🔒 개발자 도구 감지됨</div>';}
+    }
+  },1000);
+})();
+</script>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-9SYCKLSKD6"></script>
 <script>
@@ -145,11 +182,11 @@ function generateCharacterSectionHTML(myIlju, pIlju, myDm, pDm) {
   gtag('config', 'G-9SYCKLSKD6');
 </script><!--
 ╔═══════════════════════════════════════════════════════════════════════════════╗
-║  🍀 사주로또 Pro v34.7 [PUBLIC] - GitHub Pages Edition                          ║
+║  🍀 사주로또 Pro v34.7 [PERSONAL] - 비즈니스 긴장 모드                         ║
 ║  전문가 수준 사주팔자 분석 & 로또 번호 생성기                                 ║
 ║                                                                                ║
 ║  🆓 FREE EDITION - 모든 기능 무료                                             ║
-║  🔓 PUBLIC VERSION (DevTools, Right-click disabled)                      ║
+║  🔓 PERSONAL VERSION (DevTools, Right-click disabled)                   ║
 ║                                                                                ║
 ╠═══════════════════════════════════════════════════════════════════════════════╣
 ║  📋 CODE MAP (K-MUDANG과 공유)                                                ║
