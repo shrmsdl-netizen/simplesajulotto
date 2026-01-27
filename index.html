@@ -349,7 +349,7 @@ function generateCharacterSectionHTML(myIlju, pIlju, myDm, pDm) {
         </p><p style="font-size:0.9rem;color:#aaa;margin-bottom:18px;">
             나눈 복은 배가 되어 돌아옵니다.
         </p><div style="display:flex;flex-direction:column;gap:10px;align-items:center;"><button onclick="copyAccount()" style="width:220px;padding:12px 20px;background:rgba(255,255,255,0.1);color:var(--gold);font-weight:600;border-radius:25px;border:1px solid var(--gold);font-size:0.9rem;cursor:pointer;">
-                🏦 계좌복사 (케이뱅크)
+                🙏 복채 보내기 (행운 기원)
             </button></div><p style="margin-top:20px;font-size:1.05rem;color:#ccc;line-height:1.8;">
             🔒 광고 없이, 불순한 기운 없이<br><span style="color:var(--gold);font-size:1.1rem;">오롯이 맑은 기(氣)만 머무는 곳</span></p><p style="margin-top:12px;font-size:0.8rem;color:#888;line-height:1.6;">
             복채는 자발적 감사의 표시이며, 서비스 이용과 무관합니다.
@@ -660,7 +660,7 @@ directSeal:{k:'정인',c:'正印',d:'학업, 문서. 시험운이 좋고 어른�
 2097:[[2,3,7,3],[3,5,0,27],[4,4,5,4],[5,4,17,32],[6,4,22,21],[7,6,9,14],[8,6,19,47],[9,7,0,27],[10,7,16,25],[11,6,19,50],[12,6,12,45],[1,5,18,13]],
 2098:[[2,3,12,55],[3,5,6,19],[4,4,10,56],[5,4,23,22],[6,5,4,11],[7,6,15,3],[8,7,1,35],[9,7,6,16],[10,7,22,14],[11,7,1,40],[12,6,18,35],[1,6,0,3]],
 2099:[[2,3,18,43],[3,5,12,8],[4,4,16,44],[5,5,5,10],[6,5,9,59],[7,6,20,51],[8,7,7,23],[9,7,12,5],[10,8,4,3],[11,7,7,29],[12,7,0,24],[1,6,5,52]],
-2100:[[2,3,24,31],[3,5,17,56],[4,4,22,32],[5,5,10,58],[6,5,15,47],[7,7,2,40],[8,7,13,13],[9,7,17,54],[10,8,9,52],[11,7,13,19],[12,7,6,14],[1,6,11,43]]};const LUNAR_DATA=[0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,0x06566,0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,0x06ca0,0x0b550,0x15355,0x04da0,0x0a5d0,0x14573,0x052d0,0x0a9a8,0x0e950,0x06aa0,0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0,0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b5a0,0x195a6,0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,0x09570,0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x055c0,0x0ab60,0x096d5,0x092e0,0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5,0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,0x05aa0,0x076a3,0x096d0,0x04bd7,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0];const LUNAR_START = 1900;const MY_ACCOUNT = "케이뱅크 100150462483 김대인";let GENDER = 'm';let CALENDAR = 'solar';let PARTNER_CALENDAR = 'solar';let SAJU = null;let GODS = null;let STRENGTH = null;let BIRTH_YEAR = null;let BIRTH_MONTH = null;let BIRTH_DAY = null;let BIRTH_HOUR = null;let ORIGINAL_LUNAR_YEAR = null;let ORIGINAL_LUNAR_MONTH = null;let ORIGINAL_LUNAR_DAY = null;let currentNumbers = [];let history = [];const KAKAO_KEY = 'YOUR_KAKAO_JAVASCRIPT_KEY';function initKakao() {if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {try {Kakao.init(KAKAO_KEY);console.log('Kakao SDK initialized');} catch(e) {console.log('Kakao init skipped (key not set)');}}}
+2100:[[2,3,24,31],[3,5,17,56],[4,4,22,32],[5,5,10,58],[6,5,15,47],[7,7,2,40],[8,7,13,13],[9,7,17,54],[10,8,9,52],[11,7,13,19],[12,7,6,14],[1,6,11,43]]};const LUNAR_DATA=[0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,0x06566,0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,0x06ca0,0x0b550,0x15355,0x04da0,0x0a5d0,0x14573,0x052d0,0x0a9a8,0x0e950,0x06aa0,0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0,0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b5a0,0x195a6,0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,0x09570,0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x055c0,0x0ab60,0x096d5,0x092e0,0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5,0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,0x05aa0,0x076a3,0x096d0,0x04bd7,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0];const LUNAR_START = 1900;const MY_ACCOUNT = "케이뱅크 100150462483 케이무당";let GENDER = 'm';let CALENDAR = 'solar';let PARTNER_CALENDAR = 'solar';let SAJU = null;let GODS = null;let STRENGTH = null;let BIRTH_YEAR = null;let BIRTH_MONTH = null;let BIRTH_DAY = null;let BIRTH_HOUR = null;let ORIGINAL_LUNAR_YEAR = null;let ORIGINAL_LUNAR_MONTH = null;let ORIGINAL_LUNAR_DAY = null;let currentNumbers = [];let history = [];const KAKAO_KEY = 'YOUR_KAKAO_JAVASCRIPT_KEY';function initKakao() {if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {try {Kakao.init(KAKAO_KEY);console.log('Kakao SDK initialized');} catch(e) {console.log('Kakao init skipped (key not set)');}}}
 let talismanGenerated = false;let talismanDataUrl = null;function generateTalisman() {if (!SAJU || !SAJU.day) {toast('먼저 사주 분석을 해주세요! 🔮');return;}
 const yearBranchIdx = BRANCH.findIndex(b => b.c === SAJU.year.b.c);spinZodiacWheel(yearBranchIdx, function() {startTalismanGeneration();});setTimeout(() => { if(!talismanGenerated) createHighResTalisman(); }, 100);}
 function startTalismanGeneration() {const overlay = document.getElementById('talisman-ritual-overlay');if (overlay) {overlay.classList.add('active');playRitualAnimation(() => {if(!talismanGenerated) createHighResTalisman();overlay.classList.remove('active');document.getElementById('talisman-preview').style.display = 'block';document.getElementById('talisman-btn-wrapper').style.display = 'none';toast('🏮 개운 부적이 생성되었습니다!');});} else {if(!talismanGenerated) createHighResTalisman();document.getElementById('talisman-preview').style.display = 'block';document.getElementById('talisman-btn-wrapper').style.display = 'none';toast('🏮 개운 부적이 생성되었습니다!');}}
@@ -3710,7 +3710,26 @@ document.getElementById('share-balls').innerHTML = currentNumbers.map(n => creat
 function closeShareModal() { document.getElementById('share-modal').classList.remove('active'); }
 function shareNumbers() {const text = `🍀 사주로또 Pro\n${currentNumbers.join(' - ')}\n✨ 역대 당첨번호 100% 제외`;if (navigator.share) navigator.share({title:'사주로또',text}).catch(copyNumbers);else copyNumbers();}
 function copyNumbers() {navigator.clipboard.writeText(`🍀 사주로또: ${currentNumbers.join(', ')}`).then(() => { toast('복사되었습니다!'); closeShareModal(); });}
-function copyAccount() {navigator.clipboard.writeText(MY_ACCOUNT).then(() => toast('계좌번호 복사됨!'));}
+function copyAccount() {
+  const text = MY_ACCOUNT;
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(() => toast('계좌번호 복사 완료! 🙏'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      toast('계좌번호 복사 완료! 🙏');
+    } catch(e) {
+      toast('복사 실패 - 직접 입력해주세요');
+    }
+    document.body.removeChild(ta);
+  }
+}
 function saveImage() {if (!currentNumbers.length) { toast('먼저 번호를 생성하세요'); return; }
 toast('스크린샷으로 저장해주세요 📱');}</script><!-- 저작권 표시 --><div style="text-align:center;padding:20px;color:#555;font-size:11px;">
     © 2025 사주로또 Pro. All Rights Reserved.<br><span style="font-size:10px;color:#444;">이 서비스의 모든 콘텐츠와 코드는 저작권법에 의해 보호됩니다.</span></div></body></html>
