@@ -4,7 +4,7 @@
 <script>
 
 // ========================================
-// [v34.5] 조후 보완 버그 수정 + 극한극조 가점
+// [v34.6] 조후 보완 버그 수정 + 극한극조 가점
 // ========================================
 const ILJU_IMAGE_KR = {
 '甲子': { name: '바다 옆 큰 나무', emoji: '🌳🌊', desc: '풍요 속에 뿌리내린 야망' },
@@ -145,7 +145,7 @@ function generateCharacterSectionHTML(myIlju, pIlju, myDm, pDm) {
   gtag('config', 'G-9SYCKLSKD6');
 </script><!--
 ╔═══════════════════════════════════════════════════════════════════════════════╗
-║  🍀 사주로또 Pro v34.5 [PUBLIC] - 조후 보완 버그 수정                         ║
+║  🍀 사주로또 Pro v34.6 [PUBLIC] - 조후 보완 버그 수정                         ║
 ║  전문가 수준 사주팔자 분석 & 로또 번호 생성기                                 ║
 ║                                                                                ║
 ║  🆓 FREE EDITION - 모든 기능 무료                                             ║
@@ -172,7 +172,7 @@ function generateCharacterSectionHTML(myIlju, pIlju, myDm, pDm) {
 ╠═══════════════════════════════════════════════════════════════════════════════╣
 ║  📝 VERSION HISTORY                                                           ║
 ╠═══════════════════════════════════════════════════════════════════════════════╣
-║  v34.5 (2026-01-26):                                                          ║
+║  v34.6 (2026-01-26):                                                          ║
 ║    - [FIX] 조후 보완 조건 버그 수정: '열'→'조' (존재하지 않던 타입 수정)       ║
 ║           → '한+조', '조+한' 조합 정상 인식                                    ║
 ║    - [NEW] 극한극조 천생연분 가점: 극+극 조합 시 +15점 (기존 +12)              ║
@@ -3214,8 +3214,8 @@ tip: '평등한 관계를 유지하기 좋아요!'});}
 // ===== 조후론 강화 (K-MUDANG v4.21.0 방식) =====
 const myDmEl = myDm.e;
 const mbi = BRANCH.indexOf(SAJU.month.b);
-const isWinter = [10,11,0].includes(mbi); // 해자축
-const isSummer = [4,5,6].includes(mbi); // 사오미
+const isWinter = [0,1,11].includes(mbi); // 자축해(子丑亥)
+const isSummer = [5,6,7].includes(mbi); // 사오미(巳午未)
 // 상대방 오행 카운트
 const pElCounts = {wood:0,fire:0,earth:0,metal:0,water:0};
 [pSaju.year?.s,pSaju.month?.s,pSaju.day?.s].filter(Boolean).forEach(s => pElCounts[s.e]++);
@@ -3434,7 +3434,7 @@ if (myGiInP >= 2) criticals.push('⚠️ 상대가 내 기신(' + ELEMENT[r.myGo
 if (r.analysis?.johu?.score === -3) criticals.push('🌡️ 동일 조후(同調候): 둘 다 ' + (myJohuInfo.includes('한') ? '寒(한)' : '燥(조)') + ' 계열 - 서로에게 균형을 줄 수 없음!');
 if (r.analysis?.johu?.score >= 12) criticals.push('🌡️ 조후 보완! - ' + (r.analysis.johu.details[0]?.desc || '한난조습 완벽 조화'));
 if (criticals.length === 0) criticals.push('특별한 핵심 요소 없음 - 아래 상세 분석 참조');
-let text = `===== 사주로또 Pro 궁합 분석 (v34.5) =====
+let text = `===== 사주로또 Pro 궁합 분석 (v34.6) =====
 ⚠️ AI 해석 필수: 아래 모든 데이터를 반드시 해석하세요.
 
 【⚡ 핵심 궁합 요소 - 가장 먼저 해석하세요 ⚡】
@@ -3505,6 +3505,8 @@ ${(() => {
   if (r.analysis.ilji?.score <= -10) factors.push('⚠️ 일지 충: ' + (r.analysis.ilji.details[0]?.desc || '갈등 주의'));
   // 원진 체크
   if (r.analysis.wonJinGuiMun?.hasWonjin) factors.push('😤 원진 관계: 미묘한 긴장감 존재');
+  // 형 체크
+  if (r.analysis.wonJinGuiMun?.details?.some(d => d.title?.includes('형(刑)'))) factors.push('⚠️ 형(刑) 관계: 서로를 망치는 방향 주의');
   return factors.length > 0 ? factors.map((f, i) => (i+1) + '. ' + f).join('\n') : '특별한 핵심 요소 없음';
 })()}
 
@@ -3549,7 +3551,7 @@ if (yearlyInfo && yearlyInfo.length > 0) {
   }
 }
 text += `
-===== AI 해석 요청 (v34.5 확장) =====
+===== AI 해석 요청 (v34.6 확장) =====
 
 【⚠️ 術語指南 (용어 가이드)】
 • 六合 (육합): 배우자궁 결합 - 가장 강력한 로맨틱 지표
