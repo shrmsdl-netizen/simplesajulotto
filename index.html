@@ -2458,7 +2458,7 @@ let samhapText = '';let samhapWarning = '';try {const advInt = analyzeAdvancedIn
 return `• ${s.name}: ${s.complete ? '완전 성립!' : '반합'} - ${s.desc}${meaning}`;}).join('\n');const completeSamhap = advInt.samhapGuk.filter(s => s.complete);if (completeSamhap.length > 0) {samhapWarning = `\n\n⚠️ [중요: 삼합국 완전 성립]\n${completeSamhap.map(s =>
 `${s.name}이 완성되어 지지의 ${s.result} 기운이 매우 강해졌습니다. 격국과 신강/신약 판단 시 이 오행 변화를 반드시 고려해야 합니다.`
 ).join('\n')}`;}} else {samhapText = '• 삼합국 없음';}} catch(e) { samhapText = '• 삼합국 데이터 없음'; }
-const hansinEl = elOrder[(elOrder.indexOf(GODS.gi) + 4) % 5];const HOUR_LABELS = [
+const hansinEl = (GODS && GODS.gi) ? elOrder[(elOrder.indexOf(GODS.gi) + 4) % 5] : 'earth';const HOUR_LABELS = [
 '자시(子時, 23:30~01:29)',
 '축시(丑時, 01:30~03:29)',
 '인시(寅時, 03:30~05:29)',
