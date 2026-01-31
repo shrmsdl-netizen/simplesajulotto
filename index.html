@@ -172,7 +172,7 @@ function generateCharacterSectionHTML(myIlju, pIlju, myDm, pDm) {
   gtag('config', 'G-9SYCKLSKD6');
 </script><!--
 ╔═══════════════════════════════════════════════════════════════════════════════╗
-║  🍀 사주로또 Pro v34.7 [PUBLIC] - GitHub Pages Edition                          ║
+║  🍀 사주로또 Pro v34.8 [PUBLIC] - GitHub Pages Edition                          ║
 ║  전문가 수준 사주팔자 분석 & 로또 번호 생성기                                 ║
 ║                                                                                ║
 ║  🆓 FREE EDITION - 모든 기능 무료                                             ║
@@ -199,6 +199,9 @@ function generateCharacterSectionHTML(myIlju, pIlju, myDm, pDm) {
 ╠═══════════════════════════════════════════════════════════════════════════════╣
 ║  📝 VERSION HISTORY                                                           ║
 ╠═══════════════════════════════════════════════════════════════════════════════╣
+║  v34.8 (2026-01-31):                                                          ║
+║    - [FIX] AI 프롬프트 복사 오류 수정 (JIJANGGAN j.s → j.stem 버그)             ║
+║                                                                               ║
 ║  v34.7 (2026-01-27):                                                          ║
 ║    - [SYNC] K-MUDANG v4.23 NWS 시스템 동기화                                  ║
 ║    - [NEW] 비즈니스 긴장 모드: 忌神≥2 && business → +5점 (기존 -8점 대신)     ║
@@ -2514,7 +2517,7 @@ ${hourState ? '• 시지 ' + SAJU.hour.b.c + ': ' + hourState.k + ' (에너지 
 • 토(土): ${elCount.earth}개
 • 금(金): ${elCount.metal}개
 • 수(水): ${elCount.water}개
-• 없는 오행: ${(() => {const missing = Object.entries(elCount).filter(e => e[1] === 0).map(e => e[0]);if (missing.length === 0) return '없음';const jijangInfo = {};const pillarNames = ['년', '월', '일', '시'];[SAJU.year?.b, SAJU.month?.b, SAJU.day?.b, SAJU.hour?.b].forEach((b, idx) => {if (!b) return;const bi = BRANCH.indexOf(b);(JIJANGGAN[bi] || []).forEach(j => {const el = STEM[j.s].e;if (!jijangInfo[el]) jijangInfo[el] = [];jijangInfo[el].push(pillarNames[idx] + b.c + ':' + STEM[j.s].c);});});const result = [];missing.forEach(el => {if (jijangInfo[el] && jijangInfo[el].length > 0) {result.push(ELEMENT[el].k + '(※' + jijangInfo[el].join(', ') + ')');} else {result.push(ELEMENT[el].k + '(완전부재)');}});return result.join(', ');})()}
+• 없는 오행: ${(() => {const missing = Object.entries(elCount).filter(e => e[1] === 0).map(e => e[0]);if (missing.length === 0) return '없음';const jijangInfo = {};const pillarNames = ['년', '월', '일', '시'];[SAJU.year?.b, SAJU.month?.b, SAJU.day?.b, SAJU.hour?.b].forEach((b, idx) => {if (!b) return;const bi = BRANCH.indexOf(b);(JIJANGGAN[bi] || []).forEach(j => {const el = STEM[j.stem].e;if (!jijangInfo[el]) jijangInfo[el] = [];jijangInfo[el].push(pillarNames[idx] + b.c + ':' + STEM[j.stem].c);});});const result = [];missing.forEach(el => {if (jijangInfo[el] && jijangInfo[el].length > 0) {result.push(ELEMENT[el].k + '(※' + jijangInfo[el].join(', ') + ')');} else {result.push(ELEMENT[el].k + '(완전부재)');}});return result.join(', ');})()}
 ${(() => {const missing = Object.entries(elCount).filter(e => e[1] === 0).map(e => e[0]);if (missing.length === 0) return '';const healthWarnings = {wood: '⚠️ 목(木) 부재 건강경고: 간/담낭/눈/신경계 취약. 분노 조절 어려움, 우유부단함 주의. 녹색 채소, 신맛 음식, 동쪽 방향 권장.',
 fire: '⚠️ 화(火) 부재 건강경고: 심장/소장/혈압/눈 취약. 우울감, 의욕저하, 냉증 주의. 붉은색, 쓴맛 음식, 남쪽 방향, 햇볕 쬐기 권장.',
 earth: '⚠️ 토(土) 부재 건강경고: 위장/비장/소화기 취약. 걱정 과다, 신뢰 부족 주의. 황토색, 단맛 음식, 중앙/안정적 환경 권장.',
