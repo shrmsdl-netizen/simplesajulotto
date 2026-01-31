@@ -2410,10 +2410,8 @@ ${personalAdvice.map(a => `
 `;}
 return html;}
 function showTodayFortune() {const el = document.getElementById('today-fortune');el.style.display = 'block';document.getElementById('today-fortune-content').innerHTML = getTodayFortune();}
-function copySajuForAI() {
-if (!SAJU) { toast('먼저 사주를 분석해주세요'); return; }
-if (!GODS || !GODS.yong || !GODS.hee || !GODS.gi) { toast('용신 분석이 완료되지 않았습니다. 다시 분석해주세요.'); return; }
-try {const str = calcStrength(SAJU);const dm = SAJU.day.s;const samhap = GODS?.samhap || analyzeSamhapBureau(SAJU);const format = calcFormat(SAJU, str, samhap);const interactions = calcInteractions(SAJU) || [];const sinsal = calcSinsal(SAJU) || [];const gongmang = calcGongmang(SAJU);const luck = calcLuck(SAJU, BIRTH_YEAR, GENDER, GODS, BIRTH_MONTH, BIRTH_DAY, BIRTH_HOUR) || [];const curLuck = luck.find(l => l.isCur);const currentYear = new Date().getFullYear();const age = currentYear - BIRTH_YEAR + 1;const ilju = getIljuDesc(SAJU.day.s, SAJU.day.b);const yearGodObj = getTenGod(SAJU.year.s, dm);const yearBranchIdx = BRANCH.findIndex(b => b.c === SAJU.year.b.c);const hasSikSangWithRoot = yearGodObj && ['상관','식신'].includes(yearGodObj.k) &&
+function copySajuForAI() {if (!SAJU) { toast('먼저 사주를 분석해주세요'); return; }
+try {const str = calcStrength(SAJU);const dm = SAJU.day.s;const samhap = GODS?.samhap || analyzeSamhapBureau(SAJU);const format = calcFormat(SAJU, str, samhap);const interactions = calcInteractions(SAJU) || [];const sinsal = calcSinsal(SAJU) || [];const gongmang = calcGongmang(SAJU);const luck = calcLuck(SAJU, BIRTH_YEAR, GENDER, GODS, BIRTH_MONTH, BIRTH_DAY, BIRTH_HOUR) || [];const curLuck = luck.find(l => l.isCur);const currentYear = new Date().getFullYear();const today = new Date();const age = currentYear - BIRTH_YEAR + 1;const manAge = (() => { let a = currentYear - BIRTH_YEAR; const m = today.getMonth() + 1; const d = today.getDate(); if (m < BIRTH_MONTH || (m === BIRTH_MONTH && d < BIRTH_DAY)) a--; return a; })();const ilju = getIljuDesc(SAJU.day.s, SAJU.day.b);const yearGodObj = getTenGod(SAJU.year.s, dm);const yearBranchIdx = BRANCH.findIndex(b => b.c === SAJU.year.b.c);const hasSikSangWithRoot = yearGodObj && ['상관','식신'].includes(yearGodObj.k) &&
 [5, 6].includes(yearBranchIdx);const canBeJonggeok = str.extreme && !hasSikSangWithRoot;const elCount = {wood:0, fire:0, earth:0, metal:0, water:0};[SAJU.year, SAJU.month, SAJU.day, SAJU.hour].forEach(p => {if(p && p.s) elCount[p.s.e]++;if(p && p.b) elCount[p.b.e]++;});const yearGod = getTenGod(SAJU.year.s, dm);const monthGod = getTenGod(SAJU.month.s, dm);const hourGod = SAJU.hour ? getTenGod(SAJU.hour.s, dm) : null;const getBranchYang = (branch) => {const idx = BRANCH.findIndex(b => b.c === branch.c);return idx % 2 === 0;};const yearBranchYang = getBranchYang(SAJU.year.b) ? '陽' : '陰';const monthBranchYang = getBranchYang(SAJU.month.b) ? '陽' : '陰';const dayBranchYang = getBranchYang(SAJU.day.b) ? '陽' : '陰';const hourBranchYang = SAJU.hour ? (getBranchYang(SAJU.hour.b) ? '陽' : '陰') : '';const yearBranchGod = getTenGod({e: SAJU.year.b.e, y: getBranchYang(SAJU.year.b)}, dm);const monthBranchGod = getTenGod({e: SAJU.month.b.e, y: getBranchYang(SAJU.month.b)}, dm);const dayBranchGod = getTenGod({e: SAJU.day.b.e, y: getBranchYang(SAJU.day.b)}, dm);const hourBranchGod = SAJU.hour ? getTenGod({e: SAJU.hour.b.e, y: getBranchYang(SAJU.hour.b)}, dm) : null;const dmEl = dm.e;const elOrder = ['wood', 'fire', 'earth', 'metal', 'water'];const dmIdx = elOrder.indexOf(dmEl);const tenGodMap = {peer: elOrder[dmIdx],
 output: elOrder[(dmIdx + 1) % 5],
 wealth: elOrder[(dmIdx + 2) % 5],
@@ -2460,7 +2458,7 @@ let samhapText = '';let samhapWarning = '';try {const advInt = analyzeAdvancedIn
 return `• ${s.name}: ${s.complete ? '완전 성립!' : '반합'} - ${s.desc}${meaning}`;}).join('\n');const completeSamhap = advInt.samhapGuk.filter(s => s.complete);if (completeSamhap.length > 0) {samhapWarning = `\n\n⚠️ [중요: 삼합국 완전 성립]\n${completeSamhap.map(s =>
 `${s.name}이 완성되어 지지의 ${s.result} 기운이 매우 강해졌습니다. 격국과 신강/신약 판단 시 이 오행 변화를 반드시 고려해야 합니다.`
 ).join('\n')}`;}} else {samhapText = '• 삼합국 없음';}} catch(e) { samhapText = '• 삼합국 데이터 없음'; }
-const hansinEl = (GODS && GODS.gi) ? elOrder[(elOrder.indexOf(GODS.gi) + 4) % 5] : 'earth';const HOUR_LABELS = [
+const hansinEl = elOrder[(elOrder.indexOf(GODS.gi) + 4) % 5];const HOUR_LABELS = [
 '자시(子時, 23:30~01:29)',
 '축시(丑時, 01:30~03:29)',
 '인시(寅時, 03:30~05:29)',
@@ -2480,7 +2478,7 @@ if (TIME_CORRECTION_SETTINGS.useYajasi) {correctionInfo.push('야자시 방식')
 const correctionText = correctionInfo.length > 0 ? `\n• 시간보정: ${correctionInfo.join(', ')}` : '';let text = `===== 사주팔자 분석 결과 =====
 【기본 정보】
 • 생년월일시: ${birthDateText}
-• 성별/나이: ${GENDER === 'm' ? '남성' : '여성'}, 만 ${age-1}세${correctionText}
+• 성별/나이: ${GENDER === 'm' ? '남성' : '여성'}, 만 ${manAge}세${correctionText}
 • 일간: ${dm.k}${ELEMENT[dm.e].k}(${dm.c}${ELEMENT[dm.e].c})
 【사주 원국 (년/월/일/시)】
 • 천간: ${SAJU.year.s.c}(${SAJU.year.s.k}) ${SAJU.month.s.c}(${SAJU.month.s.k}) ${SAJU.day.s.c}(${SAJU.day.s.k}) ${SAJU.hour ? SAJU.hour.s.c+'('+SAJU.hour.s.k+')' : '미상'}
@@ -3016,7 +3014,7 @@ ${monthText}
 3. 대운 + 세운 십신 - 현재 인생 테마
 4. 지지 십신 - 숨겨진 영향력
 5. 나머지 요소들
-`;navigator.clipboard.writeText(text).then(() => {toast('📋 복사 완료! Gemini나 ChatGPT에 붙여넣기 하세요');}).catch(() => {const ta = document.createElement('textarea');ta.value = text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('📋 복사 완료!');});} catch(err) {toast('복사 오류: ' + (err.message || err));}}
+`;navigator.clipboard.writeText(text).then(() => {toast('📋 복사 완료! Gemini나 ChatGPT에 붙여넣기 하세요');}).catch(() => {const ta = document.createElement('textarea');ta.value = text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('📋 복사 완료!');});} catch(err) {console.error('복사 오류:', err);toast('복사 중 오류가 발생했습니다');}}
 function analyzeMatch() {try {if (!SAJU) { toast('먼저 [사주분석]에서 내 사주를 분석하세요'); return; }
 let py = +document.getElementById('partner-year').value;let pm = +document.getElementById('partner-month').value;let pd = +document.getElementById('partner-day').value;const pH = +document.getElementById('partner-hour').value;const pGender = document.getElementById('partner-gender').value;const relType = document.getElementById('relationship-type')?.value || 'romance';if (!py || !pm || !pd) { toast('상대방 생년월일을 입력하세요'); return; }
 if (PARTNER_CALENDAR === 'lunar') {const conv = lunarToSolar(py, pm, pd);if (!conv || !conv.year) { toast('음력 변환 오류. 양력으로 시도하세요'); return; }py = conv.year; pm = conv.month; pd = conv.day;}
